@@ -1,10 +1,10 @@
 Package: rend
 Type: Package
-Title: What the Package Does (Title Case)
+Title: An R-package for Ecological Network Dynamics
 Version: 0.1
 Date: 2016-01-23
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
+Author: Jonathan J. Borrelli
+Maintainer: Jonathan J. Borrelli <borrejj@gmail.com>
+Description: Allows a user to simulate the biomass dynamics of species given a user-input food web adjacency matrix.
 License: What license is it under?
 LazyData: TRUE
