@@ -6,7 +6,7 @@
 #' @return numeric vector of 1 if species is basal, and 0 otherwise
 #' @export
 #'
-#' @examples
+
 getR <- function(amat){
   r.i <- c()
   r.i[colSums(amat) == 0] <- 1
@@ -26,10 +26,10 @@ getR <- function(amat){
 #' @param B Biomass
 #' @param K Carrying capacity
 #'
+#' @details testing a new tag
 #' @return numeric vector of population sizes
 #' @export
-#'
-#' @examples
+
 Gi <- function(r, B, K){return(r * B * (1 - (B/K)))}
 
 
@@ -40,10 +40,9 @@ Gi <- function(r, B, K){return(r * B * (1 - (B/K)))}
 #' @param B.0 half saturation constant
 #' @param xpar control parameter that alters the form of the functional response
 #'
-#' @return
 #' @export
 #'
-#' @examples
+
 Fij <- function(B, A, B.0, xpar){
   sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))^(1+xpar)
   denom <- sum.bk + B.0^(1+xpar)
@@ -61,10 +60,9 @@ Fij <- function(B, A, B.0, xpar){
 #' @param B.0 half saturation constant
 #' @param xpar control parameter that alters the strength of interference
 #'
-#' @return
 #' @export
 #'
-#' @examples
+
 Fbd <- function(B, A, B.0, xpar){
   sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))
   denom <- sum.bk + (1 + (xpar * B)) * B.0
@@ -81,10 +79,8 @@ Fbd <- function(B, A, B.0, xpar){
 #' @param states initial biomass values for the species in the system
 #' @param par list of named parameters for input into the model
 #'
-#' @return
 #' @export
-#'
-#' @examples
+
 CRmod <- function(t,states,par){
 
   with(as.list(c(states, par)), {
@@ -102,10 +98,8 @@ CRmod <- function(t,states,par){
 #' @param states biomass values for the species in the system
 #' @param parms additional required parameters for the event
 #'
-#' @return
 #' @export
 #'
-#' @examples
 goExtinct <- function(times, states, parms){
   with(as.list(states), {
     for(i in 1:length(states)){
@@ -131,10 +125,8 @@ goExtinct <- function(times, states, parms){
 #' @param B.o half saturation constant
 #' @param plot logical determining whether or not a plot of biomass over time should be printed
 #'
-#' @return
 #' @export
-#'
-#' @examples
+
 CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
   require(deSolve)
 
