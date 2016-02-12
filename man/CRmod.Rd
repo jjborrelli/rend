@@ -2,34 +2,15 @@
 % Please edit documentation in R/cr_modelFUNCTIONS.R
 \name{CRmod}
 \alias{CRmod}
-\title{Consumer-resource biomass dynamics model}
+\title{Dynamic function for input into ode solver}
 \usage{
-CRmod(Adj, t = 1:200, G = G.i, method = conres, FuncRes = Fij, K = 1,
-  x.i = 0.5, yij = 6, eij = 1, xpar = 0.2, B.o = 0.5, plot = FALSE)
+CRmod(t, states, par)
 }
 \arguments{
-\item{Adj}{binary adjacency matrix of the food web}
-
 \item{t}{time sequence for which output is wanted}
 
-\item{G}{function describing biomass growth in absence of predation}
+\item{states}{initial biomass values for the species in the system}
 
-\item{method}{function to be used in the ode solver}
-
-\item{FuncRes}{name of the functional response to be used in the model}
-
-\item{K}{carrying capacity}
-
-\item{x.i}{mass specific metabolic rate}
-
-\item{yij}{maximum rate at which species i assimilates species j}
-
-\item{eij}{conversion efficiency}
-
-\item{xpar}{control parameter for the functional response}
-
-\item{B.o}{half saturation constant}
-
-\item{plot}{logical determining whether or not a plot of biomass over time should be printed}
+\item{par}{list of named parameters for input into the model}
 }
 
