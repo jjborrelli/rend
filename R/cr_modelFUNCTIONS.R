@@ -1,7 +1,5 @@
-## Consumer-Resource model functions
 
-
-#' Create vector of non-zero growth rates for basal species
+#' @title Create vector of non-zero growth rates for basal species
 #'
 #' @param amat Adjacency matrix of food web
 #'
@@ -9,7 +7,7 @@
 #' @export
 #'
 #' @examples
-get.r <- function(amat){
+getR <- function(amat){
   r.i <- c()
   r.i[colSums(amat) == 0] <- 1
   r.i[colSums(amat) != 0] <- 0
@@ -20,8 +18,9 @@ get.r <- function(amat){
 
 
 
-#' Basal growth function
-#' \code{G.i} returns population growth of basal species in the absence of predation
+#' @title Basal growth function
+#'
+#' @description \code{G.i} returns population growth of basal species in the absence of predation
 #'
 #' @param r Growth rate in the absence of predators
 #' @param B Biomass
@@ -31,10 +30,10 @@ get.r <- function(amat){
 #' @export
 #'
 #' @examples
-G.i <- function(r, B, K){return(r * B * (1 - (B/K)))}
+Gi <- function(r, B, K){return(r * B * (1 - (B/K)))}
 
 
-#' Lotka-Volterra functional response
+#' @title Lotka-Volterra functional response
 #'
 #' @param B vector of biomasses
 #' @param A binary adjacency matrix of the food web
@@ -55,7 +54,7 @@ Fij <- function(B, A, B.0, xpar){
 }
 
 
-#' Consumer-Interference functional response
+#' @title Consumer-Interference functional response
 #'
 #' @param B vector of biomasses
 #' @param A binary adjacency matrix of the food web
@@ -75,8 +74,8 @@ Fbd <- function(B, A, B.0, xpar){
   return(F1)
 }
 
-# dynamic function for ode solver
-#' Dynamic function for input into ode solver
+
+#' @title Dynamic function for input into ode solver
 #'
 #' @param t time sequence for which output is wanted
 #' @param states initial biomass values for the species in the system
@@ -86,7 +85,7 @@ Fbd <- function(B, A, B.0, xpar){
 #' @export
 #'
 #' @examples
-conres <- function(t,states,par){
+CRmod <- function(t,states,par){
 
   with(as.list(c(states, par)), {
     dB <- G.i(r = r.i, B = states, K = K) - x.i*states + rowSums((x.i * yij * FR(states, A, B.o, xpar = xpar) * states)) - rowSums((x.i * yij * t(FR(states, A, B.o, xpar = xpar)* states))/eij)
@@ -97,7 +96,7 @@ conres <- function(t,states,par){
 }
 
 
-#' Extinction event function for the ODE system
+#' @title Extinction event function for the ODE system
 #'
 #' @param times time sequence for which output is wanted
 #' @param states biomass values for the species in the system
@@ -107,7 +106,7 @@ conres <- function(t,states,par){
 #' @export
 #'
 #' @examples
-eventfun <- function(times, states, parms){
+goExtinct <- function(times, states, parms){
   with(as.list(states), {
     for(i in 1:length(states)){
       if(states[i] < 10^-10){states[i] <- 0}else{states[i]}
@@ -117,7 +116,7 @@ eventfun <- function(times, states, parms){
 }
 
 
-#' Consumer-resource biomass dynamics model
+#' @title Consumer-resource biomass dynamics model
 #'
 #' @param Adj binary adjacency matrix of the food web
 #' @param t time sequence for which output is wanted
@@ -136,7 +135,7 @@ eventfun <- function(times, states, parms){
 #' @export
 #'
 #' @examples
-CRmod <- function(Adj, t = 1:200, G = G.i, method = conres, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, plot = FALSE){
+CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
   require(deSolve)
 
   grow <- get.r(Adj)
@@ -156,7 +155,7 @@ CRmod <- function(Adj, t = 1:200, G = G.i, method = conres, FuncRes = Fij, K = 1
 
   states <- runif(nrow(Adj), .5, 1)
 
-  out <- ode(y=states, times=t, func=method, parms=par, events = list(func = eventfun, time = t))
+  out <- ode(y=states, times=t, func=method, parms=par, events = list(func = ext, time = t))
 
   if(plot) print(matplot(out[,-1], typ = "l", lwd = 2, xlab = "Time", ylab = "Biomass"))
 
