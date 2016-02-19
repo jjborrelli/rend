@@ -12,7 +12,9 @@ getR <- function(amat){
   r.i[colSums(amat) == 0] <- 1
   r.i[colSums(amat) != 0] <- 0
 
-  if(sum(r.i) == 0){r.i[sample(1:length(r.i), 1)] <- 1}
+  if(sum(r.i) == 0){
+    warning("No basal species in simulation")
+  }
   return(r.i)
 }
 
