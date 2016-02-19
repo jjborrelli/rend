@@ -84,7 +84,10 @@ Fbd <- function(B, A, B.0, xpar){
 CRmod <- function(t,states,par){
 
   with(as.list(c(states, par)), {
-    dB <- G.i(r = r.i, B = states, K = K) - x.i*states + rowSums((x.i * yij * FR(states, A, B.o, xpar = xpar) * states)) - rowSums((x.i * yij * t(FR(states, A, B.o, xpar = xpar)* states))/eij)
+    dB <- G.i(r = r.i, B = states, K = K) -                                   # growth
+      x.i*states +                                                            # death
+      rowSums((x.i * yij * FR(states, A, B.o, xpar = xpar) * states)) -       # consumption
+      rowSums((x.i * yij * t(FR(states, A, B.o, xpar = xpar)* states))/eij)   # death by predation
 
     list(c(dB))
   })
