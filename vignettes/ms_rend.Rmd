@@ -158,8 +158,33 @@ kable(df, format = "pandoc", caption = "Parameter definitions for the dynamic mo
 
 The `CRsimulator` function can be broken down into four main parts. 
 
-```{r}
-CRsimulator
+```{r, eval = F}
+function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
+  require(deSolve)
+
+  grow <- getR(Adj)
+
+  par <- list(
+    K = K,
+    x.i = x.i,
+    yij = yij,
+    eij = 1,
+    xpar = xpar,
+    B.o = B.o,
+    r.i = grow,
+    A = Adj,
+    G.i = G,
+    FR = FuncRes
+  )
+
+  states <- runif(nrow(Adj), .5, 1)
+
+  out <- ode(y=states, times=t, func=method, parms=par, events = list(func = ext, time = t))
+
+  if(plot) print(matplot(out[,-1], typ = "l", lwd = 2, xlab = "Time", ylab = "Biomass"))
+
+  return(out)
+}
 ```
 
 The first part, `grow <- getR(Adj)` creates a vector of whether or not species are basal. It uses the `getR` function to assess the column sums of the adjacency matrix to determine which species are basal. If there are no basal species, the function will return a warning (_"No basal species in simulation"_). The second part gathers all required parameters of the consumer resource model into a single list. The default values for these parameters are in Table 2. By default the function for growth is `Gi`, functional response is `Fij`, extinction events is `goExtinct`, and the default method is `CRmod`. All species initially start with a random biomass drawn from a uniform distribution between 0.5 and 1.   
@@ -171,16 +196,47 @@ kable(df, format = "pandoc", caption = "Fixed parameter values for the dynamic m
 
 The third part of the `CRsimulator` function is the numerical integration using `deSolve::ode`. This integration requires the method function `CRmod`, which codes the bioenergetic model. 
 
-```{r}
-CRmod
+```{r, echo = T, eval = F}
+function(t,states,par){
+
+  with(as.list(c(states, par)), {
+    dB <- G.i(r = r.i, B = states, K = K) -                                   # growth
+      x.i*states +                                                            # death
+      rowSums((x.i * yij * FR(states, A, B.o, xpar = xpar) * states)) -       # consumption
+      rowSums((x.i * yij * t(FR(states, A, B.o, xpar = xpar)* states))/eij)   # death by predation
+
+    list(c(dB))
+  })
+
+}
 ```
 
 Currently `rend` only has two main types of functional responses: one based on Holling's Type II and Type III (`Fij`),  and a second based on consumer interference (`Fbd`). 
 
-```{r, echo = T}
-Fij
-Fbd
+__Fij__
+```{r, echo = T, eval = F}
+function(B, A, B.0, xpar){
+  sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))^(1+xpar)
+  denom <- sum.bk + B.0^(1+xpar)
+
+  F1 <- sapply(1:nrow(A), function(x){(B[x] * A[x,])^(1+xpar)})/denom
+
+  return(F1)
+}
 ```
+
+__Fbd__
+```{r, eval = F}
+function(B, A, B.0, xpar){
+  sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))
+  denom <- sum.bk + (1 + (xpar * B)) * B.0
+
+  F1 <- sapply(1:nrow(A), function(x){(B[x] * A[x,])})/denom
+
+  return(F1)
+}
+```
+
 
 Both functions take the same input parameters: `B` is the vector of biomasses, `A` is the adjacency matrix, `B.0` is the half saturation constant, and `xpar` is either the _q_ parameter of the Holling functional response or the consumer interference parameter _c_. `Fij` and `Fbd` also both return a matrix reflecting the impact of species _i_ on species _j_.   
 
@@ -190,14 +246,64 @@ The last part of `CRsimulator` will plot the output of the integration (when `pl
 
 In order to create a visualization of the dynamics of the food web through time, the rend package relies on the animation package. With the current version of rend, the user is able to take the output of the `CRsimulator` function and generate a video representation of the dynamics of the time series. Both biomass and interaction dynamics are visualized. Visualization is done by the `netHTML` function, which serves as a wrapper for the `animation` package's `saveHTML`. The function output is an HTML video of the food web at each time step. 
 
-```{r}
-netHTML
+```{r, echo = T, eval = F}
+function(mat, dyn, path1 = getwd()){
+  require(animation)
+
+  lay <- matrix(c(layout.sphere(graph.adjacency(mat))[,1], TrophInd(mat)$TL), ncol = 2)
+  s <- matrix(0, nrow = nrow(dyn), ncol = ncol(mat))
+
+  ani.options(interval = .25)
+  saveHTML(
+    {
+      for(i in 1:50){
+        fr <- Fij(dyn[i,-1], mat, .5, .2)
+        strength <- melt(fr)[,3][melt(fr)[,3] > 0]
+        fr[fr > 0 ] <- 1
+
+        g.new <- graph.adjacency(t(fr))
+        E(g.new)$weight <- strength/max(strength)*10
+        s[i,c(which(dyn[i,-1] > 0))] <-log(dyn[i, c(which(dyn[i,] > 0)[-1])]) +
+          abs(min(log(dyn[i, c(which(dyn[i,] > 0)[-1])])))
+
+        plot.igraph(g.new, vertex.size = s[i,], edge.width = E(g.new)$weight, layout = lay)
+      }
+    },
+    img.name = paste(path1, "fwdyn", sep = ""), htmlfile = paste(path1, "fwdyn.html", sep = ""),
+    interval = .25, nmax =500, ani.width = 500, ani.height = 500, outdir = path1
+  )
+}
 ```
 
 
 #	Examples  
 
 ## Two-Species Dynamics (Multiple Functional Response Types)  
+
+A simple example of this package is with two species, a basal resource and a consumer. The adjacency matrix is two rows and two columns.
+```{r}
+m2sp <- matrix(c(0,0,1,0), nrow = 2, ncol = 2)
+m2sp
+```
+
+All that is required is to feed this adjacency matrix into the `CRsimulator` function, and choose whether to alter any of the default parameter settings. The first six rows of the output are shown in Table 3. Column one is the time step, column two is the biomass species 1 (the basal species), and column three is the biomass of species 2 (the consumer). The resulting biomass dynamics are shown in Figure 3.   
+
+```{r}
+my_sim <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2))
+```
+
+```{r table3, results = "asis"}
+kable(round(head(my_sim), 4), format = "pandoc", caption = "First six rows of the output of the CRsimulator function")
+```
+
+```{r fig3, fig.height = 5, fig.width = 6, fig.cap = "The dynamics of consumer and resource given default settings in CRsimulator"}
+df1 <- data.frame(x = c(my_sim[,1], my_sim[,1], my_sim[,2]), 
+           y = c(my_sim[,2], my_sim[,3], my_sim[,3]), 
+           plot = c(rep("Trajectory", 400), rep("State", 200)),
+           Species = c(rep(c("A", "B"), each = 200), rep("A", 200)))
+ggplot(df1, aes(x = x, y = y, col = Species)) + geom_path(size = 1) + scale_color_manual(values = c("green4", "black", "green4")) + facet_wrap(~plot, scales = "free_x") + theme_bw()
+```
+
 
 ## Sample Run of Dynamics on a Niche Model Food Web  
 
