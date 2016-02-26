@@ -15,6 +15,7 @@ library(knitr)
 opts_chunk$set(tidy = T, message = F, warning = F, echo = F, comment = NA)
 library(rend)
 library(ggplot2)
+library(data.table)
 ```
 
 \begin{center}
@@ -288,7 +289,7 @@ m2sp
 
 All that is required is to feed this adjacency matrix into the `CRsimulator` function, and choose whether to alter any of the default parameter settings. The first six rows of the output are shown in Table 3. Column one is the time step, column two is the biomass species 1 (the basal species), and column three is the biomass of species 2 (the consumer). The resulting biomass dynamics are shown in Figure 3.   
 
-```{r}
+```{r, echo = T}
 my_sim <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2))
 ```
 
@@ -302,6 +303,49 @@ df1 <- data.frame(x = c(my_sim[,1], my_sim[,1], my_sim[,2]),
            plot = c(rep("Trajectory", 400), rep("State", 200)),
            Species = c(rep(c("A", "B"), each = 200), rep("A", 200)))
 ggplot(df1, aes(x = x, y = y, col = Species)) + geom_path(size = 1) + scale_color_manual(values = c("green4", "black", "green4")) + facet_wrap(~plot, scales = "free_x") + theme_bw()
+```
+
+Looking at the difference between `Fij` and `Fbd`. 
+
+```{r, echo = T}
+my_simbd <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), FuncRes = Fbd)
+```
+
+```{r fig4, fig.height = 5, fig.width = 6, fig.cap = "The dynamics of consumer and resource with differing functional responses given default settings in CRsimulator"}
+FRdf <- data.frame(x = rep(1:200, 4), y = c(my_sim[,2], my_sim[,3], my_simbd[,2], my_simbd[,3]),
+                   Species = factor(c(rep(c("Resource", "Consumer"), each = 200), rep(c("Resource", "Consumer"), each = 200)), 
+                                    levels = c("Resource", "Consumer")),
+                   FR = rep(c("Fij", "Fbd"), each = 400))
+ggplot(FRdf, aes(x = x, y = y, col = Species)) + geom_path(size = 1) + facet_wrap(~FR, scales = "free_x") + theme_bw() + xlab("Time") + ylab("Biomass")
+```
+
+How do the dynamics associated with each functional response type change with altered tuning parameters, _q_ and _c_ respectively. 
+
+```{r, echo = T}
+my_sim2 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 0)
+my_sim3 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 1)
+my_sim4 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 5)
+
+
+my_sim2bd <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), FuncRes = Fbd, xpar = 0)
+my_sim3bd <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), FuncRes = Fbd, xpar = 1)
+my_sim4bd <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), FuncRes = Fbd, xpar = 5)
+```
+
+```{r fig5, fig.height = 5, fig.width = 6, fig.cap = "The dynamics of consumer and resource given varying xpar settings in CRsimulator"}
+df1 <- data.frame(my_sim, xpar = .2, FR = "Fij")
+df2 <- data.frame(my_sim2, xpar = 0, FR = "Fij")
+df3 <- data.frame(my_sim3, xpar = 1, FR = "Fij")
+df4 <- data.frame(my_sim4, xpar = 5, FR = "Fij")
+
+df1bd <- data.frame(my_simbd, xpar = .2, FR = "Fbd")
+df2bd <- data.frame(my_sim2bd, xpar = 0, FR = "Fbd")
+df3bd <- data.frame(my_sim3bd, xpar = 1, FR = "Fbd")
+df4bd <- data.frame(my_sim4bd, xpar = 5, FR = "Fbd")
+
+rdf <- rbindlist(list(df1, df2, df3, df4, df1bd, df2bd, df3bd, df4bd))
+
+ggplot(rdf, aes(x = X1, y = X2, col = factor(xpar))) + geom_path(size = 1, alpha = .7) + scale_color_brewer(palette = "Dark2") + facet_wrap(~FR) + theme_bw() + xlab("Species A") + ylab("Species B") + labs(col = "xpar")
 ```
 
 
