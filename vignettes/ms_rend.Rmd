@@ -1,0 +1,234 @@
+---
+title: "rend: An R package for Ecological Network Dynamics"
+author: "Jonathan J. Borrelli"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+  fontsize: 12pt
+  geometry: margin=1in
+---
+```{r, message = F, echo = F, warning = F}
+library(knitr)
+opts_chunk$set(tidy = T, message = F, warning = F, echo = F, comment = NA)
+library(rend)
+library(ggplot2)
+```
+
+\begin{center}
+\Large{\bf{Abstract:}}\\
+\normalsize
+Abstract text goes here
+\end{center}
+
+# Introduction  
+
+While there is an abundance of packages available in the R programming environment to analyze the structure of networks (e.g., igraph, foodweb, sna, enar, cheddar), there is a dearth of packages that can be used to apply dynamic models to the interacting populations.   
+
+In this paper I present an in-development R package for the simulation and analysis of ecological network dynamics. The package is still in-development because the current version limits the user to the simulation of food web (trophic) dynamics. Future versions will incorporate additional functionality (discussed below).
+
+
+#	Overview  
+
+## Food Web Dynamics Simulation  
+
+###	Consumer-Resource Model
+
+A bioenergetics consumer resource model is at the core of the food web dynamics simulator function. The model was originally developed for two species by Yodzis and Ines (CITATION), generalized to multiple species by Mcann et al. (CITATION). The version included in this version of rend is was first presented in Williams and Martinez (CITATION) and used again in Romanuk et al. (CITATION).
+
+
+\begin{align}
+\frac{dB_i(t)}{dt} = G_i(B) - x_iB_i(t) + \sum_{j}^{n}\left(x_i y_{ij} F_{ij}(B) B_i(t) - x_j y_{ji} F_{ji}(B) B_j(t) / e_{ji} \right)
+\end{align}
+
+There are four basic parts to the model: growth, death, consumption of prey, and being consumed by predators. The first term, $G_i(B)$, is the function describing primary production of producer species in the absence of predation. Producers grow exponentially with density dependence.   
+
+\begin{align}
+G_i(B) = r_i B_i(t) (1 - \frac{B_i(t)}{K_i})
+\end{align}
+
+In the equation, $r_i$ is the intrinsic rate of increase, $B_i$ is the biomass of population _i_, and $K_i$ is the carrying capacity of population _i_. The consumption of resource _j_ by consumer _i_ is modeled by:     
+
+\begin{align}
+F_{Hij}(B) = \frac{B_j^{1+q}}{\sum_k B_k^{1+q} + B_0^{1+q}}
+\end{align}
+
+Here, $B_j$ is the biomass of the consumed resource, in the denominator the summed biomass across all $k$ resources, and $B_0$ is the half saturation density. The parameter $q$ is a tuning parameter that lets the modeller shift the functional response between a type II ($q = 0$) and a type III ($q = 1$). The functional response above defines the fraction of a predator's maximal ingestion that is realized at a given time step (Figure 1).
+
+```{r Fijsim}
+
+K = 1
+x.i = .5
+yij = 6
+xpar = 0
+B.o = .5
+A =  matrix(c(0,0,1,0), nrow = 2)
+FR = Fij
+
+prey <- seq(0, 2, .01)
+pred <- .5
+x <- c(0, .5, 1, 3, 5)
+eaten <- matrix(nrow = length(prey), ncol = length(x))
+for(j in 1:length(x)){
+  for(i in 1:length(prey)){
+    states = c(prey[i], pred)
+    eaten[i,j] <- rowSums((x.i * yij * FR(states, A, B.o, xpar = x[j]) * states))[2]
+  }
+}
+
+d1 <- list()
+for(i in 1:ncol(eaten)){
+  d1[[i]] <- cbind(eat = eaten[,i], q = x[i], prey)
+}
+d2 <- do.call(rbind, d1)
+```
+
+```{r FRfig, fig.height = 5, fig.width = 6, fig.cap = "How the functional response of the prey changes with altered values of the parameter q"}
+ggplot(as.data.frame(d2), aes(x = prey, y = eat, col = factor(q))) + geom_line(size = 1.5) + xlab("Prey Biomass") + ylab("Prey Biomass Consumed") + 
+  theme_bw() + labs(col = "q")
+```
+
+In this model, the impact of the predator on the prey is equivalent to the impact of the prey on the predator. Thus the numerical response of the predator is the same magnitude as the functional response of the prey but of the opposite sign. This is accomplished as $F_ji = t(F_ij)$.
+
+
+An alternative functional response is based on consumer interference (Beddington DeAngelis CITATION).   
+
+\begin{align}
+F_{BDij}(B) = \frac{B_j}{\sum_{k=1}^n \alpha_{ik}B_k(t) + (1+c_{ij}B_i(t))B_{0ji}}
+\end{align} 
+
+Here the parameter $c_{ij}$ gives the strength of the interference. Figure 2 shows how $c_{ij}$ changes the shape of the functional response.     
+
+```{r Fbdsim}
+
+K = 1
+x.i = .5
+yij = 6
+xpar = 0
+B.o = .5
+A =  matrix(c(0,0,1,0), nrow = 2)
+FR = Fbd
+
+prey <- seq(0, 2, .01)
+pred <- .5
+x <- c(0, .5, 1, 3, 5)
+eaten <- matrix(nrow = length(prey), ncol = length(x))
+for(j in 1:length(x)){
+  for(i in 1:length(prey)){
+    states = c(prey[i], pred)
+    eaten[i,j] <- rowSums((x.i * yij * FR(states, A, B.o, xpar = x[j]) * states))[2]
+  }
+}
+
+d1 <- list()
+for(i in 1:ncol(eaten)){
+  d1[[i]] <- cbind(eat = eaten[,i], q = x[i], prey)
+}
+d2 <- do.call(rbind, d1)
+```
+
+```{r FRfig2, fig.height = 5, fig.width = 6, fig.cap = "How the functional response of the prey changes with altered values of the parameter c"}
+ggplot(as.data.frame(d2), aes(x = prey, y = eat, col = factor(q))) + geom_line(size = 1.5) + xlab("Prey Biomass") + ylab("Prey Biomass Consumed") + 
+  theme_bw() + labs(col = "c")
+```  
+
+###	Implementation  
+
+The model is implemented in the code as a numerical integration using the deSolve R package (CITATION). Currently, the primary function is `CRsimulator`, which allows the user to specify all parameter values and the desired functions for the growth of basal species and the functional response. Inputs to `CRsimulator` are described in Table 1. 
+
+```{r table1, results = "asis"}
+df <- data.frame(Parameter = factor(c("Adj", "t", "G", "method", "FuncRes", "K", "x.i", "yij", "eij", "xpar", "B.o", "ext", "plot")),
+                 Definition = c("Adjacency matrix",
+                                "Sequence of time steps",
+                                "Function for basal resource growth",
+                                "Function to input into the ode solver",
+                                "Functional response",
+                                "Carrying capacity",
+                                "Mass specific metabolic rate",
+                                "Maximum rate at which species i assimilates specesi j per unit metabolic rate of species i",
+                                "Conversion efficiency",
+                                "Tuning parameter either q or c depending on the functional response",
+                                "Half saturation density of species j when consumed by species i",
+                                "Function describing extinction events during the simulation",
+                                "Whether or not to generate a plot of biomass against time"))
+kable(df, format = "pandoc", caption = "Parameter definitions for the dynamic model")
+```
+
+The `CRsimulator` function can be broken down into four main parts. 
+
+```{r}
+CRsimulator
+```
+
+The first part, `grow <- getR(Adj)` creates a vector of whether or not species are basal. It uses the `getR` function to assess the column sums of the adjacency matrix to determine which species are basal. If there are no basal species, the function will return a warning (_"No basal species in simulation"_). The second part gathers all required parameters of the consumer resource model into a single list. The default values for these parameters are in Table 2. By default the function for growth is `Gi`, functional response is `Fij`, extinction events is `goExtinct`, and the default method is `CRmod`. All species initially start with a random biomass drawn from a uniform distribution between 0.5 and 1.   
+
+```{r table2, results = "asis"}
+df <- data.frame(Parameter = factor(c("K", "x.i", "yij", "eij", "xpar", "B.o")), Value = c(1, .5, 6, 1, .2, .5))
+kable(df, format = "pandoc", caption = "Fixed parameter values for the dynamic model")
+```
+
+The third part of the `CRsimulator` function is the numerical integration using `deSolve::ode`. This integration requires the method function `CRmod`, which codes the bioenergetic model. 
+
+```{r}
+CRmod
+```
+
+Currently `rend` only has two main types of functional responses: one based on Holling's Type II and Type III (`Fij`),  and a second based on consumer interference (`Fbd`). 
+
+```{r, echo = T}
+Fij
+Fbd
+```
+
+Both functions take the same input parameters: `B` is the vector of biomasses, `A` is the adjacency matrix, `B.0` is the half saturation constant, and `xpar` is either the _q_ parameter of the Holling functional response or the consumer interference parameter _c_. `Fij` and `Fbd` also both return a matrix reflecting the impact of species _i_ on species _j_.   
+
+The last part of `CRsimulator` will plot the output of the integration (when `plot = TRUE`).  
+
+##	Food Web Dynamics Visualization  
+
+In order to create a visualization of the dynamics of the food web through time, the rend package relies on the animation package. With the current version of rend, the user is able to take the output of the `CRsimulator` function and generate a video representation of the dynamics of the time series. Both biomass and interaction dynamics are visualized. Visualization is done by the `netHTML` function, which serves as a wrapper for the `animation` package's `saveHTML`. The function output is an HTML video of the food web at each time step. 
+
+```{r}
+netHTML
+```
+
+
+#	Examples  
+
+## Two-Species Dynamics (Multiple Functional Response Types)  
+
+## Sample Run of Dynamics on a Niche Model Food Web  
+
+## Food Web Dynamics Explorer via Shiny Web App  
+
+# Conclusions
+
+
+# Future Directions  
+
+I can see a number of different directions this package could take in terms of increasing performance and functionality. Below I highlight several lines I plan to take in further developing the rend package.  
+
+## Add internal functions for output assessment  
+
+### Structural changes over time  
+
+## Increasing options for trophic dynamic models  
+
+### Ratio-dependent functional responses  
+
+### Non-Bioenergetics models  
+
+## Adding models for alternative interaction types  
+
+### Mutualisms  
+
+### Competition  
+
+## Incorporate Stochasticity  
+
+### sde package  
+
+### Risk-based assessment  
+
