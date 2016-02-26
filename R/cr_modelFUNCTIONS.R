@@ -160,6 +160,41 @@ CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K
 }
 
 
+#' @title Dynamic network visualization
+#'
+#' @param mat initial adjacency matrix of the food web
+#' @param dyn output of \code{CRsimulator}
+#' @param path1 where to save the html plot
+#'
+#' @return An html file of the changes to the food web during the simulation.
+#' @export
+#'
+
+netHTML <- function(mat, dyn, path1 = getwd()){
+  require(animation)
+
+  lay <- matrix(c(layout.sphere(graph.adjacency(mat))[,1], TrophInd(mat)$TL), ncol = 2)
+  s <- matrix(0, nrow = nrow(dyn), ncol = ncol(mat))
+
+  ani.options(interval = .25)
+  saveHTML(
+    {
+      for(i in 1:50){
+        fr <- Fij(dyn[i,-1], mat, .5, .2)
+        strength <- melt(fr)[,3][melt(fr)[,3] > 0]
+        fr[fr > 0 ] <- 1
+
+        g.new <- graph.adjacency(t(fr))
+        E(g.new)$weight <- strength/max(strength)*10
+        s[i,c(which(dyn[i,-1] > 0))] <-log(dyn[i, c(which(dyn[i,] > 0)[-1])])+abs(min(log(dyn[i, c(which(dyn[i,] > 0)[-1])])))
+
+        plot.igraph(g.new, vertex.size = s[i,], edge.width = E(g.new)$weight, layout = lay)
+      }
+    },
+    img.name = paste(path1, "fwdyn", sep = ""), htmlfile = paste(path1, "fwdyn.html", sep = ""),
+    interval = .25, nmax =500, ani.width = 500, ani.height = 500, outdir = path1
+  )
+}
 
 
 
