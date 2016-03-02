@@ -227,7 +227,7 @@ function(B, A, B.0, xpar){
 ```
 
 __Fbd__
-```{r, eval = F}
+```{r, echo = T, eval = F}
 function(B, A, B.0, xpar){
   sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))
   denom <- sum.bk + (1 + (xpar * B)) * B.0
