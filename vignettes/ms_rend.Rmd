@@ -244,7 +244,7 @@ df <- data.frame(Parameter = factor(c("K", "x.i", "yij", "eij", "xpar", "B.o")),
 kable(df, format = "pandoc", caption = "Fixed parameter values for the dynamic model")
 ```
 
-The third part of the `CRsimulator` function is the numerical integration using `deSolve::ode`. This integration requires the method function `CRmod`, which codes the bioenergetic model. 
+The third part of the `CRsimulator` function is the numerical integration using `deSolve::ode`. This integration requires the method function `CRmod`, which codes the bioenergetic model. This function interacts with the event function, which by default is `goExtinct`, and determines whether a species has gone extinct at each time step by checking whether the species' abundance has passed below the threshold level for extinction ($10^10$).
 
 ```{r crmod, echo = T, eval = F}
 function(t, states, par){
@@ -332,7 +332,7 @@ m2sp <- matrix(c(0,0,1,0), nrow = 2, ncol = 2)
 m2sp
 ```
 
-All that is required is to feed this adjacency matrix into the `CRsimulator` function, and choose whether to alter any of the default parameter settings. The first six rows of the output are shown in Table 3. Column one is the time step, column two is the biomass species 1 (the basal species), and column three is the biomass of species 2 (the consumer). The resulting biomass dynamics are shown in Figure 3.   
+All that is required is to feed this adjacency matrix into the `CRsimulator` function, and choose whether to alter any of the default parameter settings. The first six rows of the output are shown in Table 3. Column one is the time step, column two is the biomass species 1 (the basal species), and column three is the biomass of species 2 (the consumer). The resulting biomass dynamics are shown in Figure 3 below. The two species reach equilibrium rather quickly, within 100 time steps, following damped oscillations.     
 
 ```{r exSIM1, echo = T}
 my_sim <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2))
@@ -346,7 +346,7 @@ kable(round(head(my_sim), 4), format = "pandoc", caption = "First six rows of th
 df1 <- data.frame(x = c(my_sim[,1], my_sim[,1], my_sim[,2]), 
            y = c(my_sim[,2], my_sim[,3], my_sim[,3]), 
            plot = c(rep("Trajectory", 400), rep("State", 200)),
-           Species = c(rep(c("A", "B"), each = 200), rep("A", 200)))
+           Species = c(rep(c("Sp 1", "Sp 2"), each = 200), rep("A", 200)))
 
 p1 <- ggplot(df1[df1$plot == "Trajectory",], aes(x = x, y = y, col = Species)) + geom_path(size = 1) + scale_color_manual(values = c("green4", "black", "green4")) + facet_wrap(~plot, scales = "free_x") + theme_bw() + xlab("Time") + ylab("Biomass")
 
@@ -355,7 +355,7 @@ p2 <- ggplot(df1[df1$plot == "State",], aes(x = x, y = y)) + geom_path(size = 1,
 multiplot(p1, p2, layout = matrix(c(2, 1), nrow = 1, ncol = 2))
 ```
 
-Looking at the difference between `Fij` and `Fbd`. 
+The previous example in Figure 3 simply used the default settings for the `CRsimulator` function. An important setting for the user to select is the form of the functional response. Depending on whether the functional response is Lotka-Volterra or based on consumer intereference, you would expect to observe differences in the dynamics of the two species. The result of altering the functional response, and preserving the other default settings is shown in Figure 4. Looking at the difference between Lotka-Volterra (`Fij`) and consumer interference (`Fbd`) it appears as if the dynamics of the two species with Lotka-Volterra dynamics equilibrate faster. The pair of species with consumer interference are still exhibiting damped oscillations at time step 200, while the other pair are no longer oscillating.  
 
 ```{r exSIM2, echo = T}
 my_simbd <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), FuncRes = Fbd)
@@ -369,7 +369,13 @@ FRdf <- data.frame(x = rep(1:200, 4), y = c(my_sim[,2], my_sim[,3], my_simbd[,2]
 ggplot(FRdf, aes(x = x, y = y, col = Species)) + geom_path(size = 1) + facet_wrap(~FR, scales = "free_x") + theme_bw() + xlab("Time") + ylab("Biomass")
 ```
 
-How do the dynamics associated with each functional response type change with altered tuning parameters, _q_ and _c_ respectively. 
+One would also expect that differences in the tuning parameter (_q_ in the Holling functional response or _c_ for consumer interference) will also alter the dynamics of the interacting species. By systematically altering the tuning parameter (`xpar` in `CRsimulator`) I can show how the dynamics associated with each functional response type change. The results of the two species `CRsimulator` with default settings except for `xpar` equal to 0, 0.2, 1, and 5 for each functional response type are shown in Figure 5.  
+
+Williams and Martinez (CITATION) note that for the Holling functional response _q_ of 0 corresponds to a Type II functional response and _q_ of 1 corresponds to a Type III functional response. When _q_ is greater than one, the size of the prey "refugia" is larger as demonstrated by the larger lag in the functional response shown in Figure 1. For a consumer interference functional response (`Fbd`) the parameter _c_ reflects the strength of the interference among consumers.  
+
+As the parameter _q_ increases the two species reach equilibrium faster and the equilibrium biomass of the prey (Species A) is higher. With increasing consumer interference the two species also reach equilibrium faster, but there is a smaller difference in equilibrium biomasses. At the highest level of consumer interference (_c_ = 5), however, the equilibrium abundances of both species are higher than at lower levels of interference.    
+
+
 
 ```{r exSIM4, echo = T}
 my_sim2 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 0)
@@ -436,9 +442,9 @@ niche.model<-function(S,C){
 }
 ```
 
-The above code generates a niche model adjacency matrix, as shown in **Figure X**. 
+The above code generates a niche model adjacency matrix, as shown in Figure 6. 
 
-```{r figx, fig.height = 3, fig.width = 3, fig.cap = "Adjacency matrix of a niche model food web with 20 species and connectance of 0.15"}
+```{r fig6, fig.height = 3, fig.width = 3, fig.cap = "Adjacency matrix of a niche model food web with 20 species and connectance of 0.15"}
 bas <- FALSE
 while(!bas){
  n <- niche.model(20, .15)
