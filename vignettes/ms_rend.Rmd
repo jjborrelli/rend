@@ -5,28 +5,77 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   pdf_document:
     fig_caption: yes
+    fig_crop: false
     number_sections: yes
     toc: yes
   fontsize: 12pt
   geometry: margin=1in
 ---
-```{r, message = F, echo = F, warning = F}
+```{r startup, message = F, echo = F, warning = F}
 library(knitr)
 opts_chunk$set(tidy = T, message = F, warning = F, echo = F, comment = NA)
 library(rend)
 library(ggplot2)
 library(data.table)
+library(igraph)
+library(pheatmap)
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
 ```
 
+
+\newpage
 \begin{center}
+\vspace*{\fill}
+
 \Large{\bf{Abstract:}}\\
 \normalsize
 Abstract text goes here
+
+\vspace*{\fill}
 \end{center}
+\newpage
+
 
 # Introduction  
 
-While there is an abundance of packages available in the R programming environment to analyze the structure of networks (e.g., igraph, foodweb, sna, enar, cheddar), there is a dearth of packages that can be used to apply dynamic models to the interacting populations.   
+
+While there is an abundance of packages available in the R programming environment to analyze the structure of networks (e.g., igraph, foodweb, sna, enar, cheddar), there is a dearth of packages that can be used to apply dynamic models to the interacting populations. With the numerous models for multispecies predator-prey dynamics it would be possible to simply utilize the numerical integration package deSolve to implement them, but it is rarely obvious how to go from the mathematics of the model to the required code.    
 
 In this paper I present an in-development R package for the simulation and analysis of ecological network dynamics. The package is still in-development because the current version limits the user to the simulation of food web (trophic) dynamics. Future versions will incorporate additional functionality (discussed below).
 
@@ -37,7 +86,7 @@ In this paper I present an in-development R package for the simulation and analy
 
 ###	Consumer-Resource Model
 
-A bioenergetics consumer resource model is at the core of the food web dynamics simulator function. The model was originally developed for two species by Yodzis and Ines (CITATION), generalized to multiple species by Mcann et al. (CITATION). The version included in this version of rend is was first presented in Williams and Martinez (CITATION) and used again in Romanuk et al. (CITATION).
+A bioenergetics consumer resource model is at the core of the food web dynamics simulator function. The model was originally developed for two species by Yodzis and Ines (CITATION), generalized to multiple species by Mcann et al. (CITATION). The version included in this version of `rend` is was first presented in Williams and Martinez (CITATION) and used again in Romanuk et al. (CITATION).
 
 
 \begin{align}
@@ -157,9 +206,9 @@ df <- data.frame(Parameter = factor(c("Adj", "t", "G", "method", "FuncRes", "K",
 kable(df, format = "pandoc", caption = "Parameter definitions for the dynamic model")
 ```
 
-The `CRsimulator` function can be broken down into four main parts. 
+The `CRsimulator` function can be broken down into four main parts: growth rate, parameter collecting, simulation, and visualization. 
 
-```{r, eval = F}
+```{r crsim, eval = F}
 function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
   require(deSolve)
 
@@ -197,25 +246,21 @@ kable(df, format = "pandoc", caption = "Fixed parameter values for the dynamic m
 
 The third part of the `CRsimulator` function is the numerical integration using `deSolve::ode`. This integration requires the method function `CRmod`, which codes the bioenergetic model. 
 
-```{r, echo = T, eval = F}
-function(t,states,par){
+```{r crmod, echo = T, eval = F}
+function(t, states, par){
 
   with(as.list(c(states, par)), {
-    dB <- G.i(r = r.i, B = states, K = K) -                                   # growth
-      x.i*states +                                                            # death
-      rowSums((x.i * yij * FR(states, A, B.o, xpar = xpar) * states)) -       # consumption
-      rowSums((x.i * yij * t(FR(states, A, B.o, xpar = xpar)* states))/eij)   # death by predation
+    dB <- G.i(r = r.i, B = states, K = K) - x.i*states + rowSums((x.i * yij * FR(states, A, B.o, xpar = xpar) * states)) - rowSums((x.i * yij * t(FR(states, A, B.o, xpar = xpar)* states))/eij)
 
     list(c(dB))
   })
-
 }
 ```
 
 Currently `rend` only has two main types of functional responses: one based on Holling's Type II and Type III (`Fij`),  and a second based on consumer interference (`Fbd`). 
 
 __Fij__
-```{r, echo = T, eval = F}
+```{r fij, echo = T, eval = F}
 function(B, A, B.0, xpar){
   sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))^(1+xpar)
   denom <- sum.bk + B.0^(1+xpar)
@@ -227,7 +272,7 @@ function(B, A, B.0, xpar){
 ```
 
 __Fbd__
-```{r, echo = T, eval = F}
+```{r fbd, echo = T, eval = F}
 function(B, A, B.0, xpar){
   sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))
   denom <- sum.bk + (1 + (xpar * B)) * B.0
@@ -247,7 +292,7 @@ The last part of `CRsimulator` will plot the output of the integration (when `pl
 
 In order to create a visualization of the dynamics of the food web through time, the rend package relies on the animation package. With the current version of rend, the user is able to take the output of the `CRsimulator` function and generate a video representation of the dynamics of the time series. Both biomass and interaction dynamics are visualized. Visualization is done by the `netHTML` function, which serves as a wrapper for the `animation` package's `saveHTML`. The function output is an HTML video of the food web at each time step. 
 
-```{r, echo = T, eval = F}
+```{r nethtml, echo = T, eval = F}
 function(mat, dyn, path1 = getwd()){
   require(animation)
 
@@ -282,14 +327,14 @@ function(mat, dyn, path1 = getwd()){
 ## Two-Species Dynamics (Multiple Functional Response Types)  
 
 A simple example of this package is with two species, a basal resource and a consumer. The adjacency matrix is two rows and two columns.
-```{r}
+```{r exMAT}
 m2sp <- matrix(c(0,0,1,0), nrow = 2, ncol = 2)
 m2sp
 ```
 
 All that is required is to feed this adjacency matrix into the `CRsimulator` function, and choose whether to alter any of the default parameter settings. The first six rows of the output are shown in Table 3. Column one is the time step, column two is the biomass species 1 (the basal species), and column three is the biomass of species 2 (the consumer). The resulting biomass dynamics are shown in Figure 3.   
 
-```{r, echo = T}
+```{r exSIM1, echo = T}
 my_sim <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2))
 ```
 
@@ -302,12 +347,17 @@ df1 <- data.frame(x = c(my_sim[,1], my_sim[,1], my_sim[,2]),
            y = c(my_sim[,2], my_sim[,3], my_sim[,3]), 
            plot = c(rep("Trajectory", 400), rep("State", 200)),
            Species = c(rep(c("A", "B"), each = 200), rep("A", 200)))
-ggplot(df1, aes(x = x, y = y, col = Species)) + geom_path(size = 1) + scale_color_manual(values = c("green4", "black", "green4")) + facet_wrap(~plot, scales = "free_x") + theme_bw()
+
+p1 <- ggplot(df1[df1$plot == "Trajectory",], aes(x = x, y = y, col = Species)) + geom_path(size = 1) + scale_color_manual(values = c("green4", "black", "green4")) + facet_wrap(~plot, scales = "free_x") + theme_bw() + xlab("Time") + ylab("Biomass")
+
+p2 <- ggplot(df1[df1$plot == "State",], aes(x = x, y = y)) + geom_path(size = 1, col = "darkgray") + facet_wrap(~plot, scales = "free_x") + theme_bw() + xlab("Prey Biomass") + ylab("Predator Biomass")
+
+multiplot(p1, p2, layout = matrix(c(2, 1), nrow = 1, ncol = 2))
 ```
 
 Looking at the difference between `Fij` and `Fbd`. 
 
-```{r, echo = T}
+```{r exSIM2, echo = T}
 my_simbd <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), FuncRes = Fbd)
 ```
 
@@ -321,7 +371,7 @@ ggplot(FRdf, aes(x = x, y = y, col = Species)) + geom_path(size = 1) + facet_wra
 
 How do the dynamics associated with each functional response type change with altered tuning parameters, _q_ and _c_ respectively. 
 
-```{r, echo = T}
+```{r exSIM4, echo = T}
 my_sim2 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 0)
 my_sim3 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 1)
 my_sim4 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 5)
@@ -349,7 +399,76 @@ ggplot(rdf, aes(x = X1, y = X2, col = factor(xpar))) + geom_path(size = 1, alpha
 ```
 
 
-## Sample Run of Dynamics on a Niche Model Food Web  
+## Sample Run of Dynamics on Model Food Webs  
+
+Most models of food webs generate a binary adjacency matrix where a one indicates that species _i_ is consumed by species _j_. This allows for convenient pairing with the `rend` package. The `CRsimulator` function can take the output of these models as input and simulate the dynamics of the participating species. In this example I demonstrate how the package can be used to simulate the dynamics of a niche model food web. The niche model is a food web model that arranges _S_ species along some hypothetical niche axis. Each species consumes other species based on a randomly sampled feeding range with mean $c_i$ sampled from a uniform distribution from 0 to the species' niche value. The range is dependent on the user specified connectance _C_.
+
+```{r nichemodel}
+niche.model<-function(S,C){
+  require(igraph)
+  connected = FALSE
+  while(!connected){  
+    new.mat<-matrix(0,nrow=S,ncol=S)
+    ci<-vector()
+    niche<-runif(S,0,1)
+    r<-rbeta(S,1,((1/(2*C))-1))*niche
+    
+    for(i in 1:S){
+      ci[i]<-runif(1,r[i]/2,niche[i])
+    }
+    
+    r[which(niche==min(niche))]<-.00000001
+    
+    for(i in 1:S){
+      
+      for(j in 1:S){
+        if(niche[j]>(ci[i]-(.5*r[i])) && niche[j]<(ci[i]+.5*r[i])){
+          new.mat[j,i]<-1
+        }
+      }
+    }
+    
+    new.mat<-new.mat[,order(apply(new.mat,2,sum))]
+    
+    connected <- is.connected(graph.adjacency(new.mat))
+  }
+  return(new.mat)
+}
+```
+
+The above code generates a niche model adjacency matrix, as shown in **Figure X**. 
+
+```{r figx, fig.height = 3, fig.width = 3, fig.cap = "Adjacency matrix of a niche model food web with 20 species and connectance of 0.15"}
+bas <- FALSE
+while(!bas){
+ n <- niche.model(20, .15)
+ bas <- sum(colSums(n) == 0) == 5
+}
+pheatmap(n, color = c("white", "black"), cluster_rows = F, cluster_cols = F, legend = F, width = 2, height = 2)
+```
+
+```{r nmSim, fig.cap = "Biomass dynamics of species in a niche model food web, inset shows dynamics of last 25 time steps"}
+simNM <- CRsimulator(n)
+matplot(simNM[,-1], typ = "l", lwd = 2, ylab = "Biomass", xlab = "Time")
+
+plotdim <- par("plt")
+xleft    = plotdim[2] - (plotdim[2] - plotdim[1]) * 0.70
+xright   = plotdim[2]  #
+ybottom  = plotdim[4] - (plotdim[4] - plotdim[3]) * 0.70  #
+ytop     = plotdim[4]  #
+
+# set position for inset
+par(
+  fig = c(xleft, xright, ybottom, ytop)
+  , mar=c(0,0,0,0)
+  , new=TRUE
+  )
+
+# add inset
+matplot(175:200, simNM[175:200, -1], typ = "l", lwd = 2, ylab = "Biomass", xlab = "Time")
+```
+
+
 
 ## Food Web Dynamics Explorer via Shiny Web App  
 
