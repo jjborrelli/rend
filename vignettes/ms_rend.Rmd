@@ -407,7 +407,7 @@ ggplot(rdf, aes(x = X1, y = X2, col = factor(xpar))) + geom_path(size = 1, alpha
 
 ## Sample Run of Dynamics on Model Food Webs  
 
-Most models of food webs generate a binary adjacency matrix where a one indicates that species _i_ is consumed by species _j_. This allows for convenient pairing with the `rend` package. The `CRsimulator` function can take the output of these models as input and simulate the dynamics of the participating species. In this example I demonstrate how the package can be used to simulate the dynamics of a niche model food web. The niche model is a food web model that arranges _S_ species along some hypothetical niche axis. Each species consumes other species based on a randomly sampled feeding range with mean $c_i$ sampled from a uniform distribution from 0 to the species' niche value. The range is dependent on the user specified connectance _C_.
+Most models of food webs generate a binary adjacency matrix (Figure 6) where a one indicates that species _i_ is consumed by species _j_. This allows for convenient pairing with the `rend` package. The `CRsimulator` function can take the output of these models as input and simulate the dynamics of the participating species. In this example I demonstrate how the package can be used to simulate the dynamics of a niche model food web. The niche model is a food web model that arranges _S_ species along some hypothetical niche axis. Each species consumes other species based on a randomly sampled feeding range with mean $c_i$ sampled from a uniform distribution from 0 to the species' niche value. The range is dependent on the user specified connectance _C_.
 
 ```{r nichemodel}
 niche.model<-function(S,C){
@@ -442,7 +442,7 @@ niche.model<-function(S,C){
 }
 ```
 
-The above code generates a niche model adjacency matrix, as shown in Figure 6. 
+
 
 ```{r fig6, fig.height = 3, fig.width = 3, fig.cap = "Adjacency matrix of a niche model food web with 20 species and connectance of 0.15"}
 bas <- FALSE
@@ -474,6 +474,7 @@ par(
 matplot(175:200, simNM[175:200, -1], typ = "l", lwd = 2, ylab = "Biomass", xlab = "Time")
 ```
 
+Following the dynamics of predator prey interactions in this example, of the initial 20 species in the food web `r 20 - sum(simNM[200, -1] > 0)` have gone extinct. 
 
 
 ## Food Web Dynamics Explorer via Shiny Web App  
