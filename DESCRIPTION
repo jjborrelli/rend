@@ -11,5 +11,5 @@ License: What license is it under?
 LazyData: TRUE
 RoxygenNote: 5.0.1
 Imports: deSolve, igraph
-Suggests: animation, ggplot2, knitr, rmarkdown
+Suggests: animation, knitr, rmarkdown
 VignetteBuilder: knitr
