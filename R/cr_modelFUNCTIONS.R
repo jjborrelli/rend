@@ -204,7 +204,7 @@ netHTML <- function(mat, dyn, path1 = getwd()){
 #'
 #' @return A new adjacency matrix where if a_ij  = 1 so does a_ji
 #'
-#' @examples
+
 
 conversion <- function(tm){
   for(i in 1:nrow(tm)){
@@ -218,7 +218,7 @@ conversion <- function(tm){
 
 #' @title Get common food web structural indices
 #'
-#' @param dyn Matrix of biomass dynamics from `CRsimulator`
+#' @param dyn Matrix of biomass dynamics from \code{CRsimulator}
 #' @param web Initial food web adjacency matrix
 #'
 #' @return A matrix of food web indices where each row is a time step in the dynamics simulation
@@ -252,9 +252,9 @@ WEBind <- function(dyn, web){
 }
 
 
-#' @title Find the counts of three species configurations through time from `CRsimulator`
+#' @title Find the counts of three species configurations through time from \code{CRsimulator}
 #'
-#' @param dyn Matrix of biomass dynamics from `CRsimulator`
+#' @param dyn Matrix of biomass dynamics from \code{CRsimulator}
 #' @param web Initial food web adjacency matrix
 #'
 #' @return A dataframe of counts of three species configurations where each row is a time step in the model
