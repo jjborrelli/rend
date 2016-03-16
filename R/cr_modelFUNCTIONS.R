@@ -170,9 +170,7 @@ CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K
 #'
 
 netHTML <- function(mat, dyn, path1 = getwd()){
-  if(!require(animation)){
-    stop("R package 'animation' is not installed")
-  }
+  if(!require(animation)){stop("This function requires the 'animation' package to be installed and loaded")}
 
   lay <- matrix(c(layout.sphere(graph.adjacency(mat))[,1], TrophInd(mat)$TL), ncol = 2)
   s <- matrix(0, nrow = nrow(dyn), ncol = ncol(mat))
@@ -291,6 +289,8 @@ motifCounter3 <- function(dyn, web){
 
 
 trophicChange <- function(dyn, web){
+  if(!require(NetIndices)){stop("This function requires the 'NetIndices' package to be installed and loaded")}
+
   adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
   til <- lapply(adj.list, TrophInd)
 
