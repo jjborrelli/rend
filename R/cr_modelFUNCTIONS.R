@@ -170,7 +170,6 @@ CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K
 #'
 
 netHTML <- function(mat, dyn, path1 = getwd()){
-  require(animation)
 
   lay <- matrix(c(layout.sphere(graph.adjacency(mat))[,1], TrophInd(mat)$TL), ncol = 2)
   s <- matrix(0, nrow = nrow(dyn), ncol = ncol(mat))
