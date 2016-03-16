@@ -10,6 +10,6 @@ Description: Allows a user to simulate the biomass dynamics of species given a
 License: What license is it under?
 LazyData: TRUE
 RoxygenNote: 5.0.1
-Suggests: knitr,
-    rmarkdown
+Imports: deSolve, igraph
+Suggests: animation, ggplot2, knitr, rmarkdown
 VignetteBuilder: knitr
