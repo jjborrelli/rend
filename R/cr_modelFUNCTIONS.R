@@ -198,4 +198,80 @@ netHTML <- function(mat, dyn, path1 = getwd()){
 }
 
 
+#' Converts directed matrix to undirected
+#'
+#' @param tm Food web adjacency matrix
+#'
+#' @return A new adjacency matrix where if a_ij  = 1 so does a_ji
+#'
+#' @examples
+conversion <- function(tm){
+  for(i in 1:nrow(tm)){
+    for(j in 1:ncol(tm)){
+      if(tm[i,j] == 1 & tm[j,i] == 0){tm[j,i] <- 1}
+    }
+  }
+  return(tm)
+}
 
+#' Get common food web structural indices
+#'
+#' @param dyn Matrix of biomass dynamics from `CRsimulator`
+#' @param web Initial food web adjacency matrix
+#'
+#' @return A matrix of food web indices where each row is a time step in the dynamics simulation
+#' @export
+#'
+#' @examples
+WEBind <- function(dyn, web){
+  adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
+  g.list <- lapply(adj.list, graph.adjacency)
+
+  # Number of species
+  N <- sapply(adj.list, nrow)
+  # Number of links
+  Ltot <- sapply(adj.list, sum)
+  # Link Density
+  LD <- sapply(adj.list, function(x) sum(x)/nrow(x))
+  # Connectance: Links / (N * (N - 1))
+  C <- sapply(adj.list, function(x){sum(x)/(nrow(x) * (nrow(x) - 1))})
+  # Web diameter
+  D <- sapply(g.list, diameter)
+  # Average path length
+  APL <- sapply(g.list, average.path.length)
+  # Clustering coefficient
+  CC <- sapply(g.list, transitivity)
+  # Modularity
+  M <- sapply(lapply(adj.list, conversion), function(x) netcarto(x)[[2]])
+
+  indices <- matrix(c(N, Ltot, LD, C, D, APL, CC, M), nrow = nrow(dyn))
+  colnames(indices) <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M")
+  return(indices)
+}
+
+#' Find the counts of three species configurations through time from `CRsimulator`
+#'
+#' @param dyn Matrix of biomass dynamics from `CRsimulator`
+#' @param web Initial food web adjacency matrix
+#'
+#' @return A dataframe of counts of three species configurations where each row is a time step in the model
+#' @export
+#'
+#' @examples
+motifCounter3 <- function(dyn, web){
+  adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
+  g.list <- lapply(adj.list, graph.adjacency)
+
+  triad.count <- lapply(g.list, triad.census)
+  triad.matrix <- matrix(unlist(triad.count), nrow = length(g.list), ncol = 16, byrow = T)
+  colnames(triad.matrix) <- c("empty", "single", "mutual", "s5", "s4", "s1", "d4",
+                              "d3", "s2", "s3","d8", "d2", "d1", "d5", "d7", "d6")
+
+  triad.df <- as.data.frame(triad.matrix)
+
+  motif.data.frame <- data.frame(web = webs, s1 = triad.df$s1, s2 = triad.df$s2, s3 = triad.df$s3, s4 = triad.df$s4,
+                                 s5 = triad.df$s5, d1 = triad.df$d1, d2 = triad.df$d2, d3 = triad.df$d3, d4 = triad.df$d4,
+                                 d5 = triad.df$d5, d6 = triad.df$d6, d7 = triad.df$d7, d8 = triad.df$d8)
+
+  return(motif.data.frame)
+}
