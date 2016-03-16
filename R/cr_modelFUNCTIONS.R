@@ -198,13 +198,14 @@ netHTML <- function(mat, dyn, path1 = getwd()){
 }
 
 
-#' Converts directed matrix to undirected
+#' @title Converts directed matrix to undirected
 #'
 #' @param tm Food web adjacency matrix
 #'
 #' @return A new adjacency matrix where if a_ij  = 1 so does a_ji
 #'
 #' @examples
+
 conversion <- function(tm){
   for(i in 1:nrow(tm)){
     for(j in 1:ncol(tm)){
@@ -214,7 +215,8 @@ conversion <- function(tm){
   return(tm)
 }
 
-#' Get common food web structural indices
+
+#' @title Get common food web structural indices
 #'
 #' @param dyn Matrix of biomass dynamics from `CRsimulator`
 #' @param web Initial food web adjacency matrix
@@ -222,7 +224,7 @@ conversion <- function(tm){
 #' @return A matrix of food web indices where each row is a time step in the dynamics simulation
 #' @export
 #'
-#' @examples
+
 WEBind <- function(dyn, web){
   adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
   g.list <- lapply(adj.list, graph.adjacency)
@@ -249,7 +251,8 @@ WEBind <- function(dyn, web){
   return(indices)
 }
 
-#' Find the counts of three species configurations through time from `CRsimulator`
+
+#' @title Find the counts of three species configurations through time from `CRsimulator`
 #'
 #' @param dyn Matrix of biomass dynamics from `CRsimulator`
 #' @param web Initial food web adjacency matrix
@@ -257,7 +260,7 @@ WEBind <- function(dyn, web){
 #' @return A dataframe of counts of three species configurations where each row is a time step in the model
 #' @export
 #'
-#' @examples
+
 motifCounter3 <- function(dyn, web){
   adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
   g.list <- lapply(adj.list, graph.adjacency)
