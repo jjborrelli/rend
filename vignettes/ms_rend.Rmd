@@ -75,7 +75,7 @@ The structure of ecological communities determines how they respond to environme
 # Introduction  
 
 
-While there is an abundance of packages available in the R programming environment to analyze the structure of networks (e.g., igraph, foodweb, sna, enar, cheddar), there is a dearth of packages that can be used to apply dynamic models to the interacting populations. With the numerous models for multispecies predator-prey dynamics it would be possible to simply utilize the numerical integration package deSolve to implement them, but it is rarely obvious how to go from the mathematics of the model to the required code.    
+While there is an abundance of packages available in the R programming environment to analyze the structure of networks (e.g., `igraph`, `foodweb`, `sna`, `enar`, `cheddar`), there is a dearth of packages that can be used to apply dynamic models to the interacting populations. With the numerous models for multispecies predator-prey dynamics it would be possible to simply utilize the numerical integration package deSolve to implement them, but it is rarely obvious how to go from the mathematics of the model to the required code.    
 
 In this paper I present an in-development R package for the simulation and analysis of ecological network dynamics. The package is still in-development because the current version limits the user to the simulation of food web (trophic) dynamics. Future versions will incorporate additional functionality (discussed below).
 
@@ -321,6 +321,7 @@ function(mat, dyn, path1 = getwd()){
 }
 ```
 
+## Analysis
 
 #	Examples  
 
