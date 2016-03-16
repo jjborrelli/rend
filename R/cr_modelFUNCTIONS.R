@@ -133,7 +133,6 @@ goExtinct <- function(times, states, parms){
 #' @export
 
 CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
-  require(deSolve)
 
   grow <- getR(Adj)
 
