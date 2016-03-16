@@ -278,3 +278,24 @@ motifCounter3 <- function(dyn, web){
 
   return(motif.data.frame)
 }
+
+
+#' Change in trophic level through time
+#'
+#' @param dyn Matrix of biomass dynamics from \code{CRsimulator}
+#' @param web Initial food web adjacency matrix
+#'
+#' @return Matrix of trophic position for each species in the food web
+#' @export
+#'
+
+
+trophicChange <- function(dyn, web){
+  adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
+  til <- lapply(adj.list, TrophInd)
+
+  m <- matrix(0, ncol = (ncol(dyn) - 1), nrow = nrow(dyn))
+  for(x in 1:nrow(dyn)){
+    m[x, dyn[x, -1] > 0] <- til[[x]]$TL
+  }
+}
