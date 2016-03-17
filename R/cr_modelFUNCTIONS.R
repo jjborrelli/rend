@@ -300,7 +300,7 @@ trophicChange <- function(dyn, web){
     }
 
   adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
-  til <- lapply(adj.list, TrophInd)
+  til <- lapply(adj.list, NetIndices::TrophInd)
 
   m <- matrix(0, ncol = (ncol(dyn) - 1), nrow = nrow(dyn))
   for(x in 1:nrow(dyn)){
