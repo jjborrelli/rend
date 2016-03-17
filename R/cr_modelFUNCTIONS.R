@@ -224,6 +224,10 @@ conversion <- function(tm){
 #'
 
 WEBind <- function(dyn, web){
+  if(!requireNamespace("rnetcarto", quietly = TRUE)){
+    stop("This function requires the 'rnetcarto' package to be installed and loaded", call. = FALSE)
+    }
+
   adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
   g.list <- lapply(adj.list, graph.adjacency)
 
@@ -242,7 +246,7 @@ WEBind <- function(dyn, web){
   # Clustering coefficient
   CC <- sapply(g.list, transitivity)
   # Modularity
-  M <- sapply(lapply(adj.list, conversion), function(x) netcarto(x)[[2]])
+  M <- sapply(lapply(adj.list, conversion), function(x) rnetcarto::netcarto(x)[[2]])
 
   indices <- matrix(c(N, Ltot, LD, C, D, APL, CC, M), nrow = nrow(dyn))
   colnames(indices) <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M")
@@ -289,7 +293,9 @@ motifCounter3 <- function(dyn, web){
 
 
 trophicChange <- function(dyn, web){
-  if(!requireNamespace("NetIndices", quietly = TRUE)){stop("This function requires the 'NetIndices' package to be installed and loaded", call. = FALSE)}
+  if(!requireNamespace("NetIndices", quietly = TRUE)){
+    stop("This function requires the 'NetIndices' package to be installed and loaded", call. = FALSE)
+    }
 
   adj.list <- lapply(1:nrow(dyn), function(x){web[dyn[x, -1] > 0, dyn[x, -1] > 0]})
   til <- lapply(adj.list, TrophInd)
