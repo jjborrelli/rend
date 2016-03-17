@@ -74,6 +74,9 @@ The structure of ecological communities determines how they respond to environme
 
 # Introduction  
 
+A great deal of research in ecology has focused on the dynamics of interacting populations from simple Lotka-Volterra models of predator and prey to much more complex bioenergetic models generalized to any number of predators and their prey. 
+
+Multi-species predator prey models have been used to assess
 
 While there is an abundance of packages available in the R programming environment to analyze the structure of networks (e.g., `igraph`, `foodweb`, `sna`, `enar`, `cheddar`), there is a dearth of packages that can be used to apply dynamic models to the interacting populations. With the numerous models for multispecies predator-prey dynamics it would be possible to simply utilize the numerical integration package deSolve to implement them, but it is rarely obvious how to go from the mathematics of the model to the required code.    
 
@@ -321,7 +324,25 @@ function(mat, dyn, path1 = getwd()){
 }
 ```
 
-## Analysis
+## Analysis  
+
+In addition to the functions for simulation, the `rend` package also has several functions to analyze the output of the simulations. The three main analyses that can be run are (1) changes in food web indices through time, (2) change in motif structure through time, and (3) change in trophic position for each species through time. The function `WEBind` takes the output of `CRsimulator` and the initial adjacency matrix that was fed into the simulation as input. From this, new adjacency matrices are created for each time step and a eight indices are computed for each matrix. The output is the number of species, number of links, link density, connectance, diameter, average path length, clustering coefficient, and modularity (from the `rnetcarto` package, CITATION). These terms are defined in Table 3. Change in three-species motif structure through time can be found using the function `motifCounter3`. Just like with `WEBind` the inputs for the motif counting function are the output of the simulation and the initial adjacency matrix. The function then converts the adjacency matrices for each time step into `igraph` (CITATION) graph objects, which are then fed into the `igraph` function `triad.census` to get the frequency of three node configurations for each time step. The third analysis function, `trophicChange`, takes the same inputs: the output of the simulation and initial web. Then `trophicChange` outputs a species x time matrix where each row is the trophic position for each species at a given time step (and 0 represents extinction). Trophic position is found using the `TrophInd` function from the `NetIndices` R package.     
+
+```{r table4, echo = F}
+inds <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M")
+defs <- c("The number of species wih positive biomass",
+          "The total number of links among species with positive biomass",
+          "The average number of links per species",
+          "The number of realized links as a fraction of the number of possible links", 
+          "The longest shortest path between two species",
+          "The average number of links between two species",
+          "The probability of intraguild predation",
+          "The degree to which species are more connected to other species in their compartment than in others")
+df <- data.frame(Index = inds, Definition = defs)
+kable(df, format = "pandoc", caption = "Definitions of the common food web indices given from WEBind")
+```
+
+ 
 
 #	Examples  
 
