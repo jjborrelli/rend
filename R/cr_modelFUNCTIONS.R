@@ -246,10 +246,12 @@ WEBind <- function(dyn, web){
   # Clustering coefficient
   CC <- sapply(g.list, transitivity)
   # Modularity
-  M <- sapply(lapply(adj.list, conversion), function(x) rnetcarto::netcarto(x)[[2]])
+  mod <- lapply(lapply(adj.list, conversion), function(x) rnetcarto::netcarto(x))
+  M <- sapply(mod, "[[", 2)
+  nMod <- sapply(lapply(mod, "[[", 1), function(x) max(x$module) + 1)
 
-  indices <- matrix(c(N, Ltot, LD, C, D, APL, CC, M), nrow = nrow(dyn))
-  colnames(indices) <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M")
+  indices <- matrix(c(N, Ltot, LD, C, D, APL, CC, M, nMod), nrow = nrow(dyn))
+  colnames(indices) <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M", "nMod")
   return(indices)
 }
 
