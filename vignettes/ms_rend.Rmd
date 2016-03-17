@@ -19,6 +19,7 @@ library(ggplot2)
 library(data.table)
 library(igraph)
 library(pheatmap)
+library(reshape2)
 
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   library(grid)
@@ -329,7 +330,7 @@ function(mat, dyn, path1 = getwd()){
 In addition to the functions for simulation, the `rend` package also has several functions to analyze the output of the simulations. The three main analyses that can be run are (1) changes in food web indices through time, (2) change in motif structure through time, and (3) change in trophic position for each species through time. The function `WEBind` takes the output of `CRsimulator` and the initial adjacency matrix that was fed into the simulation as input. From this, new adjacency matrices are created for each time step and a eight indices are computed for each matrix. The output is the number of species, number of links, link density, connectance, diameter, average path length, clustering coefficient, and modularity (from the `rnetcarto` package, CITATION). These terms are defined in Table 3. Change in three-species motif structure through time can be found using the function `motifCounter3`. Just like with `WEBind` the inputs for the motif counting function are the output of the simulation and the initial adjacency matrix. The function then converts the adjacency matrices for each time step into `igraph` (CITATION) graph objects, which are then fed into the `igraph` function `triad.census` to get the frequency of three node configurations for each time step. The third analysis function, `trophicChange`, takes the same inputs: the output of the simulation and initial web. Then `trophicChange` outputs a species x time matrix where each row is the trophic position for each species at a given time step (and 0 represents extinction). Trophic position is found using the `TrophInd` function from the `NetIndices` R package.     
 
 ```{r table4, echo = F}
-inds <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M")
+inds <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M", "nMod")
 defs <- c("The number of species wih positive biomass",
           "The total number of links among species with positive biomass",
           "The average number of links per species",
@@ -337,7 +338,8 @@ defs <- c("The number of species wih positive biomass",
           "The longest shortest path between two species",
           "The average number of links between two species",
           "The probability of intraguild predation",
-          "The degree to which species are more connected to other species in their compartment than in others")
+          "The degree to which species are more connected to other species in their compartment than in others",
+          "The number of modules in the food web")
 df <- data.frame(Index = inds, Definition = defs)
 kable(df, format = "pandoc", caption = "Definitions of the common food web indices given from WEBind")
 ```
@@ -427,7 +429,7 @@ ggplot(rdf, aes(x = X1, y = X2, col = factor(xpar))) + geom_path(size = 1, alpha
 ```
 
 
-## Sample Run of Dynamics on Model Food Webs  
+## Sample Run of Dynamics on Model Food Webs with Analysis  
 
 Most models of food webs generate a binary adjacency matrix (Figure 6) where a one indicates that species _i_ is consumed by species _j_. This allows for convenient pairing with the `rend` package. The `CRsimulator` function can take the output of these models as input and simulate the dynamics of the participating species. In this example I demonstrate how the package can be used to simulate the dynamics of a niche model food web. The niche model is a food web model that arranges _S_ species along some hypothetical niche axis. Each species consumes other species based on a randomly sampled feeding range with mean $c_i$ sampled from a uniform distribution from 0 to the species' niche value. The range is dependent on the user specified connectance _C_.
 
@@ -467,6 +469,7 @@ niche.model<-function(S,C){
 
 
 ```{r fig6, fig.height = 3, fig.width = 3, fig.cap = "Adjacency matrix of a niche model food web with 20 species and connectance of 0.15"}
+set.seed(13)
 bas <- FALSE
 while(!bas){
  n <- niche.model(20, .15)
@@ -496,10 +499,25 @@ par(
 matplot(175:200, simNM[175:200, -1], typ = "l", lwd = 2, ylab = "Biomass", xlab = "Time")
 ```
 
-Following the dynamics of predator prey interactions in this example, of the initial 20 species in the food web `r 20 - sum(simNM[200, -1] > 0)` have gone extinct. 
+```{r nmAnalysis, fig.cap = "Change in food web indices over time"}
+wi <- WEBind(simNM, n)
+wi2 <- melt(wi)
+ggplot(wi2, aes(x = Var1, y = value)) + geom_path() + facet_wrap(~Var2, scales = "free_y") + theme_bw() + xlab("Time") + ylab("Index Value")
+```
+
+
+Figure 7 shows the output that would be given if `plot = TRUE` in the `CRsimulator` function, with an additional inset showing the last 25 time steps for clarity. It is clear that following a short period of high oscillatory behavior the system reaches equilibrium. Following the dynamics of predator prey interactions in this example, of the initial 20 species in the food web `r 20 - sum(simNM[200, -1] > 0)` have gone extinct (Figure 8, _N_). All measured food web indices exhibit changes through time during the simulation (Figure 8), which indicates that the extinctions caused by population dynamics in the model have an effect on the structure of the food web. The most obvious change in structure resulting from species extinction is a reduction in the number of species (_N_), and therefore the number of total links in the food web (_Ltot_). Concomitantly, the average number of links per species is reduced overall, however there is a bump around time steps 50, suggesting that the extinctions in that time were species with relatively few links. The initial sharp decline in _LD_ was likely caused by the loss of species with many links. Connectance (_C_) increases through time which is likely the result of the greater influence of the number of species on the measure compared to the effect of losing interactions. Decreases in food web diameter (_D_) and average path length (_APL_) are most likely to be caused by the loss of higher trophic level species (see also Figure 9). The clustering coefficient (_CC_) and modularity (_C_) show opposite patterns, with _CC_ increasing and _M_ decreasing. There is no change in the number of modules (_nMod_) and with the decrease in modularity the three modules get more strongly connected to one another. 
+
+```{r fig10tc, fig.cap = "Change in trophic position over time"}
+tc1 <- trophicChange(simNM, n)
+matplot(tc1, typ = "l")
+```
+
+
 
 
 ## Food Web Dynamics Explorer via Shiny Web App  
+
 
 # Conclusions
 
