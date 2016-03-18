@@ -117,7 +117,7 @@ where $N_i$ now represents the population abundance of the _ith_ species in the 
 
 Multi-species predator prey models have been used to assess a variety of hypotheses related to the stability of food webs. They are often used in conjunction with assembly or evolution based models of community development. In these studies researchers build food webs by the introduction of random species from some predefined species pool, or by "speciation" whereby new species are introduced as modified versions of already present species. Multi-species predator-prey models are then employed to determine whether these newly introduced species are able to persist in the web as is, or whether they cause extinctions or go extinct themselves. Assembly- and evolution-based models are typically run until the system reaches some kind of steady-state or equilibrium and the resultant community can then be analyzed and compared to existing empirically described communities. In one study, Drossell et al. (CITATION) found that the form of the functional response in the predator-prey equations has an effect on the final structure of the community, and that non-linear functional responses (especially a ratio-dependent one) led to more realistic food webs. Loeuille and Loreau (2005 CITATION), using another evolution-based model, showed that the size-structure often observed in natural communities is an emergent property of community development.   
 
-It is abundantly apparent that the use of models of multi-species dynamics has yielded great insight into why we observe certain patterns in natural communities. These models are a useful tool to find what Robert May called the "devious strategies which make for stability in enduring natural systems" (May 1973 p174 CITATION). To gain further insight we must marry these dynamic-model-based approaches with the many tools that have been developed to assess the static structure (topology) of ecological communities. 
+It is abundantly apparent that the use of models of multi-species dynamics has yielded great insight into why we observe certain patterns in natural communities. These models are a useful tool to find what Robert May called the "devious strategies which make for stability in enduring natural systems" (May 1973 p174 CITATION). To gain further insight we must integrate these dynamic-model-based approaches with the many tools that have been developed to assess the static structure (topology) of ecological communities.  
 
 While there is an abundance of packages available in the R programming environment to analyze the structure of networks, such as `igraph` (CITATION), `foodweb` (CITATION), `sna` (CITATION), `enar` (CITATION), `cheddar` (CITATION), there is a dearth of packages that can be used to apply dynamic models to the interacting populations. To my knowledge there is one other package that has been explicitly developed to apply a bioenergetic model to food webs, `gruyere` (CITATION), which has since become outdated and is no longer available for current R versions. With the numerous models for multispecies predator-prey dynamics it would be possible to simply utilize the numerical integration package `deSolve` (CITATION) to implement them, but it is rarely obvious how to go from the mathematics of the model to the required code.    
 
@@ -126,12 +126,15 @@ In this paper I present an in-development R package for the simulation and analy
 
 #	Overview  
 
+In this section I present an overview of the core components of the package. There are three main aspects of the `rend` package: simulation, visualization, and analysis. In the simulation section I will describe the model used to simulate trophic dynamics as well as the modifications to the model structure and parameter changes the user can make. The visualization aspect of the package is focused on creating dynamic network visuals by generating an html movie of the simulation. This package also includes functions to aid in the analysis of community dynamics. Users are able to assess changes in nine commonly used food web metrics, change in the sub-structure of the food web (motif analysis), and changes in the trophic structure of the food web. 
+
 ## Food Web Dynamics Simulation  
+
+The current implementation of the `rend` package allows the user to take a food web, or any binary adjacency matrix, and simulate the trophic dynamics of the constituent species. The model is a bioenergetic model that was adapted from a version presented by Williams and Martinez (CITATION). The user may choose between two model structures: one that allows for a Holling functional response, or one that allows for consumer interference. The Holling functional response can be parameterized such that it may be either Type II or Type III to varying degrees (see below). There are also a number of other parameters the user may choose to alter, although they are currently set to default values suggested by Williams and Martinez (CITATION). 
 
 ###	Consumer-Resource Model
 
-A bioenergetics consumer resource model is at the core of the food web dynamics simulator function. The model was originally developed for two species by Yodzis and Ines (CITATION), generalized to multiple species by Mcann et al. (CITATION). The version included in this version of `rend` is was first presented in Williams and Martinez (CITATION) and used again in Romanuk et al. (CITATION).
-
+A bioenergetic consumer-resource model is at the core of the food web dynamics simulator function. The model was originally developed for two species by Yodzis and Innes (CITATION), generalized to multiple species by McCann et al. (CITATION). The version included in this version of `rend` was first presented in Williams and Martinez (CITATION) and used again in Romanuk et al. (CITATION).
 
 \begin{align}
 \frac{dB_i(t)}{dt} = G_i(B) - x_iB_i(t) + \sum_{j}^{n}\left(x_i y_{ij} F_{ij}(B) B_i(t) - x_j y_{ji} F_{ji}(B) B_j(t) / e_{ji} \right)
@@ -385,8 +388,9 @@ kable(df, format = "pandoc", caption = "Definitions of the common food web indic
 ```
 
  
-
 #	Examples  
+
+In this section I outline two examples of the `rend` package in action. The first example is a two-species predator-prey system. I use this simple example to highlight the differences in the dynamics given by the two model structures, Holling and consumer interference. The second example is a more realistic use of the package, where the dynamics of a model food web are simulated and analyzed. I chose to use a well-studied model of food web topology, the niche model (CITATION). This example is primarily used to highlight the analytical functions used to assess changes to topology, motifs, and trophic positions. 
 
 ## Two-Species Dynamics (Multiple Functional Response Types)  
 
@@ -554,8 +558,6 @@ matplot(tc1, typ = "l")
 ```
 
 
-
-
 ## Food Web Dynamics Explorer via Shiny Web App  
 
 
@@ -564,27 +566,29 @@ matplot(tc1, typ = "l")
 
 # Future Directions  
 
-I can see a number of different directions this package could take in terms of increasing performance and functionality. Below I highlight several lines I plan to take in further developing the rend package.  
+I can see a number of different directions this package could take in terms of increasing performance and functionality. Below I highlight several lines I plan to take in further developing the `rend` package.  
 
-## Add internal functions for output assessment  
+## Output assessment  
 
-### Structural changes over time  
+The current functions for assessing the output of the simulation are descriptive in nature. They simply show the change in some index through simulated time. An important addition to this suite of functions will be ways to test hypotheses throught the implementation of null models. One null model would be to assume species extinctions were random. By comparing the network structure following random extinction orders to the food web following the simulation, one could determine if certain structures were more or less likely to be stable. 
 
 ## Increasing options for trophic dynamic models  
 
-### Ratio-dependent functional responses  
+Currently this package only supports a narrow range of model structures. Users can simulate dynamics with a Holling Type II, II.2 (CITATION) or III function response, or they can use the Beddington-DeAngelis functional response with consumer interferences. This is only a small subset of the proposed functional response types and ignores both simpler and more complex forms. 
 
-### Non-Bioenergetics models  
+Drossell et al. (CITATION) demonstrated that ratio-dependent functional responses led to more realistic food web structures. Therefore, in order to more properly assess how population dynamics impacts the structure of food webs using this package, I should incorporate this type of functional response. The problem here is that there is not currently an implementation of a ratio-dependent functional response for bioenergetic models. There has, however, been work to that effect in population-abundance based models. 
+
+Additional options for simulation of trophic dynamics would be to incorporate abundance-based models in addition to the current bioenergetic model. This would allow for an expanded selection of functional forms and more flexibility for the user. 
 
 ## Adding models for alternative interaction types  
 
-### Mutualisms  
+The package `rend` was initially imagined as a package for ecological network dynamics, which extends beyond food webs and predator-prey interactions. The umbrella of ecological networks includes other interaction types, and mutualistic or competitive networks are becoming increasingly popular areas of research. 
 
-### Competition  
+In addition to providing support for simulations of alternative interaction type networks, I would like to allow for dynamic simulations of whole communities. Natural communities are never made up of species interacting only one way, and there should be a way to integrate models of different interactions into a single simulation.   
 
 ## Incorporate Stochasticity  
 
-### sde package  
+Currently the models I have implemented in the `rend` package are deterministic. Multiple runs with the same food web adjacency matrix will result in the same equilibrium community, and the only source of randomness in the model is the initial biomasses of species, which are selected from a random uniform distribution. Any differences in initial biomass, however, are rarely large enough to alter the final community structure. The reason that these models must be deterministic is because the `deSolve` package, which allows for the numerical integration, does not support stochastic differential equations. The alternative is to utilize the `sde` package (CITATION), which is a package for the numerical integration of stochastic differential equations.  
 
-### Risk-based assessment  
+The benefit of incorporating stochasticity in the simulation is that it would allow for risk-based assessment of communitiy configurations. Analysis of the dynamics resulting from stochastic models could proceed probabilistically rather than as binary outcomes (either a species goes extinct or it does not). Furthermore, as species in nature typically display stochastic dynamics, any predicitons made from stochastic models would likely hold up better. 
 
