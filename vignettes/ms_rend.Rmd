@@ -75,7 +75,37 @@ The structure of ecological communities determines how they respond to environme
 
 # Introduction  
 
-A great deal of research in ecology has focused on the dynamics of interacting populations from simple Lotka-Volterra models of predator and prey to much more complex bioenergetic models generalized to any number of predators and their prey. 
+A great deal of research in ecology has focused on the dynamics of interacting populations from simple Lotka-Volterra models of predator and prey to much more complex bioenergetic models generalized to any number of predators and their prey. The most basic forms of predator-prey equations take the general/ form of the following differential equations:
+
+\begin{align}
+\frac{dN}{dt} = f(N) - g(N)P \\
+\frac{dP}{dt} = eg(N)P - qP
+\end{align}
+
+where the change in prey (_N_) abundance is due to prey growth (_f(N)_) and consumption by the predator (_f(N)P_) and predator (_P_) abundance is increased through consumption (_eg(N)P_) and decreased by death (_qP_). Lotka's (CITATION) and Volterra's (CITATION) equations assumed that the prey grew exponentially, $g(N) = rN$ (where _r_ is the Malthusian growth parameter). Later, and more modern, forms of the equations modified the growth function to incorporate density-dependent growth, $f(N) = rN(1 - N/K)$ (where _K_ is the carrying capacity). 
+
+The most widely discussed aspect of these equations is the functional response, _g(N)_, which for Lotka and Volterra took the form $\alpha N$ (where $\alpha$ is the attack rate). The Lotka-Volterra form was later modified by Holling (CITATION) into three functional forms; Type I, Type II, and Type III. Type I functional responses are simply the same as the original Lotka-volterra form. Type II functional responses incorporate an additional parameter, the handling time, which allows for predator satiation (Eq. 3). The Type III form of the equation (Eq. 4) allows for prey refugia, meaning that predators cannot feed at low prey densities.  
+
+\begin{align}
+g(N)_{Type II} = \frac{\alpha N}{1 + \alpha h N} \\
+g(N)_{Type III} = \frac{\alpha N^q}{1 + \alpha h N^q}
+\end{align}
+
+The Lotka-Volterra and Holling functional responses are known as prey-dependent. The other side of this is the ratio-dependent functional response, which assumes $g(\frac{N}{P})$ rather than $g(N)$ (AG CITATION). Ratio-dependent functional responses have taken several forms, many of which are similar to Holling's Type II. Arditi and Ginzburg suggested a form where the $N$ in the Type II response is simply replaced with $\frac{N}{P}$. Another suggested (Getz CITATION) ratio-dependent functional response takes the form:  
+
+\begin{align}
+g(N)_{Getz} = \frac{\alpha N}{cP + N}
+\end{align}
+
+where _c_ is a constant representing **something from Getz 1984 here**. Arditi and Akcakaya (CITATION) proposed an equation (Eq. 6) that includes a parameter (_m_) for mutual interference, which is the putative mechanism explaining ratio-dependence.
+
+\begin{align}
+g(N)_{AA} = \frac{\alpha N}{P^m + \alpha h N}
+\end{align}
+
+After proposing the ratio-dependent functional response, Arditi and Ginzburg (CITATION) suggest that functional responses lie along a continuum. Prey-dependence and ratio-dependence represent opposite sides of the continuum and predator-dependence is somewhere in between. It has also been argued (Abrams and Ginzburg CITATION) that while predator-dependence is the functional form that most closely represents reality, ratio-dependence is a better approximation than prey-dependence.  
+
+In several cases these simple two-species models have been generalized to apply to multiple species, with many predators and their prey. 
 
 Multi-species predator prey models have been used to assess
 
