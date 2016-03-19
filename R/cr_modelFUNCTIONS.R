@@ -246,7 +246,9 @@ WEBind <- function(dyn, web){
   # Clustering coefficient
   CC <- sapply(g.list, transitivity)
   # Modularity
-  mod <- lapply(lapply(adj.list, conversion), function(x) rnetcarto::netcarto(x))
+  mod <- lapply(lapply(adj.list, conversion), function(x){
+    ifelse(nrow(x) > 4, rnetcarto::netcarto(x), list(0,1))
+  })
   M <- sapply(mod, "[[", 2)
   nMod <- sapply(lapply(mod, "[[", 1), function(x) max(x$module) + 1)
 
