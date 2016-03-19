@@ -247,7 +247,7 @@ WEBind <- function(dyn, web){
   CC <- sapply(g.list, transitivity)
   # Modularity
   mod <- lapply(lapply(adj.list, conversion), function(x){
-    ifelse(nrow(x) > 4, rnetcarto::netcarto(x), list(0,1))
+    if(nrow(x) > 2 && sum(x) > 2){rnetcarto::netcarto(x)}else{list(data.frame(module = c(0,0)),0)}
   })
   M <- sapply(mod, "[[", 2)
   nMod <- sapply(lapply(mod, "[[", 1), function(x) max(x$module) + 1)
