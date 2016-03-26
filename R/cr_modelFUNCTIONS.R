@@ -118,6 +118,7 @@ goExtinct <- function(times, states, parms){
 #' @title Consumer-resource biomass dynamics model
 #'
 #' @param Adj binary adjacency matrix of the food web
+#' @param states Optional vector of intitial values for biomass, if NULL they are chosed from a runif(x, .5, 1)
 #' @param t time sequence for which output is wanted
 #' @param G function describing biomass growth in absence of predation
 #' @param method function to be used in the ode solver
@@ -128,13 +129,15 @@ goExtinct <- function(times, states, parms){
 #' @param eij conversion efficiency
 #' @param xpar control parameter for the functional response
 #' @param B.o half saturation constant
+#' @param r optional vector for growth rates, if NULL then r = 1 for all species with no prey
+#' @param ext function for determining when species go extinct
 #' @param plot logical determining whether or not a plot of biomass over time should be printed
 #'
 #' @export
 
-CRsimulator <- function(Adj, states = NULL, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
+CRsimulator <- function(Adj, states = NULL, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, r = NULL, ext = goExtinct, plot = FALSE){
 
-  grow <- getR(Adj)
+  if(is.null(r)){grow <- getR(Adj)}else{grow <- r}
 
   par <- list(
     K = K,
