@@ -132,7 +132,7 @@ goExtinct <- function(times, states, parms){
 #'
 #' @export
 
-CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
+CRsimulator <- function(Adj, states = NULL, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K = 1, x.i = .5, yij = 6, eij = 1, xpar = .2, B.o =.5, ext = goExtinct, plot = FALSE){
 
   grow <- getR(Adj)
 
@@ -149,7 +149,7 @@ CRsimulator <- function(Adj, t = 1:200, G = Gi, method = CRmod, FuncRes = Fij, K
     FR = FuncRes
   )
 
-  states <- runif(nrow(Adj), .5, 1)
+  if(is.null(states)){states <- runif(nrow(Adj), .5, 1)}
 
   out <- deSolve::ode(y=states, times=t, func=method, parms=par, events = list(func = ext, time = t))
 
