@@ -115,7 +115,7 @@ Most of these simple two-species models can be generalized to apply to multiple 
 
 where $N_i$ now represents the population abundance of the _ith_ species in the system, $b_i$ is the vector of growth rates (if species _i_ is basal) and death rates (for all other species), and $a_{ij}$ is the interaction coefficient (effect of species _j_ on species _i_). This type of generalization has been made not only for Lotka-Volterra equations, but may incorporate other functional response forms, such as those described above, as well as intra-specific density dependence (i.e., when $a_{ii} < 0$ in the Lotka-Volterra model).
 
-Multi-species predator prey models have been used to assess a variety of hypotheses related to the stability of food webs. They are often used in conjunction with assembly or evolution based models of community development. In these studies researchers build food webs by the introduction of random species from some predefined species pool, or by "speciation" whereby new species are introduced as modified versions of already present species. Multi-species predator-prey models are then employed to determine whether these newly introduced species are able to persist in the web as is, or whether they cause extinctions or go extinct themselves. Assembly- and evolution-based models are typically run until the system reaches some kind of steady-state or equilibrium and the resultant community can then be analyzed and compared to existing empirically described communities. In one study, Drossell et al. (CITATION) found that the form of the functional response in the predator-prey equations has an effect on the final structure of the community, and that non-linear functional responses (especially a ratio-dependent one) led to more realistic food webs. Loeuille and Loreau (2005 CITATION), using another evolution-based model, showed that the size-structure often observed in natural communities is an emergent property of community development.   
+Multi-species predator prey models have been used to assess a variety of hypotheses related to the stability of food webs. They are often used in conjunction with assembly or evolution based models of community development. In these studies researchers build food webs by the introduction of random species from some predefined species pool, or by "speciation" whereby new species are introduced as modified versions of already present species. Multi-species predator-prey models are then employed to determine whether these newly introduced species are able to persist in the web as is, or whether they cause extinctions or go extinct themselves. Assembly- and evolution-based models are typically run until the system reaches some kind of steady-state or equilibrium and the resultant community can then be analyzed and compared to existing empirically described communities. In one study, Drossel et al. (CITATION) found that the form of the functional response in the predator-prey equations has an effect on the final structure of the community, and that non-linear functional responses (especially a ratio-dependent one) led to more realistic food webs. Loeuille and Loreau (2005 CITATION), using another evolution-based model, showed that the size-structure often observed in natural communities is an emergent property of community development.   
 
 It is abundantly apparent that the use of models of multi-species dynamics has yielded great insight into why we observe certain patterns in natural communities. These models are a useful tool to find what Robert May called the "devious strategies which make for stability in enduring natural systems" (May 1973 p174 CITATION). To gain further insight we must integrate these dynamic-model-based approaches with the many tools that have been developed to assess the static structure (topology) of ecological communities.  
 
@@ -177,15 +177,11 @@ for(j in 1:length(x)){
 
 d1 <- list()
 for(i in 1:ncol(eaten)){
-  d1[[i]] <- cbind(eat = eaten[,i], q = x[i], prey)
+  d1[[i]] <- cbind(eat = eaten[,i], qc = x[i], prey)
 }
-d2 <- do.call(rbind, d1)
+d2 <- data.frame(do.call(rbind, d1), fr = "Holling")
 ```
 
-```{r FRfig, fig.height = 5, fig.width = 6, fig.cap = "How the functional response of the prey changes with altered values of the parameter q"}
-ggplot(as.data.frame(d2), aes(x = prey, y = eat, col = factor(q))) + geom_line(size = 1.5) + xlab("Prey Biomass") + ylab("Prey Biomass Consumed") + 
-  theme_bw() + labs(col = "q")
-```
 
 In this model, the impact of the predator on the prey is equivalent to the impact of the prey on the predator. Thus the numerical response of the predator is the same magnitude as the functional response of the prey but of the opposite sign. This is accomplished as $F_ji = t(F_ij)$.
 
@@ -196,7 +192,7 @@ An alternative functional response is based on consumer interference (Beddington
 F_{BDij}(B) = \frac{B_j}{\sum_{k=1}^n \alpha_{ik}B_k(t) + (1+c_{ij}B_i(t))B_{0ji}}
 \end{align} 
 
-Here the parameter $c_{ij}$ gives the strength of the interference. Figure 2 shows how $c_{ij}$ changes the shape of the functional response.     
+Here the parameter $c_{ij}$ gives the strength of the interference. Figure 1 shows how $c_{ij}$ changes the shape of the functional response.     
 
 ```{r Fbdsim}
 
@@ -221,14 +217,14 @@ for(j in 1:length(x)){
 
 d1 <- list()
 for(i in 1:ncol(eaten)){
-  d1[[i]] <- cbind(eat = eaten[,i], q = x[i], prey)
+  d1[[i]] <- cbind(eat = eaten[,i], qc = x[i], prey)
 }
-d2 <- do.call(rbind, d1)
+d2.2 <- data.frame(do.call(rbind, d1), fr = "Consumer-Interference")
 ```
 
-```{r FRfig2, fig.height = 5, fig.width = 6, fig.cap = "How the functional response of the prey changes with altered values of the parameter c"}
-ggplot(as.data.frame(d2), aes(x = prey, y = eat, col = factor(q))) + geom_line(size = 1.5) + xlab("Prey Biomass") + ylab("Prey Biomass Consumed") + 
-  theme_bw() + labs(col = "c")
+```{r FRfig, fig.height = 5, fig.width = 6, fig.cap = "How the functional response of the prey changes with altered values of the tuning parameter"}
+ggplot(rbind(d2, d2.2), aes(x = prey, y = eat, col = factor(qc))) + geom_line(size = 1.5) + 
+  facet_wrap(~fr) + theme_bw() + labs(col = "q or c") + xlab("Prey Biomass") + ylab("Prey Biomass Consumed")
 ```  
 
 ###	Implementation  
@@ -244,7 +240,7 @@ df <- data.frame(Parameter = factor(c("Adj", "t", "G", "method", "FuncRes", "K",
                                 "Functional response",
                                 "Carrying capacity",
                                 "Mass specific metabolic rate",
-                                "Maximum rate at which species i assimilates specesi j per unit metabolic rate of species i",
+                                "Maximum rate at which species i assimilates species j per unit metabolic rate of species i",
                                 "Conversion efficiency",
                                 "Tuning parameter either q or c depending on the functional response",
                                 "Half saturation density of species j when consumed by species i",
@@ -293,7 +289,7 @@ kable(df, format = "pandoc", caption = "Fixed parameter values for the dynamic m
 
 The third part of the `CRsimulator` function is the numerical integration using `deSolve::ode`. This integration requires the method function `CRmod`, which codes the bioenergetic model. This function interacts with the event function, which by default is `goExtinct`, and determines whether a species has gone extinct at each time step by checking whether the species' abundance has passed below the threshold level for extinction ($10^10$).
 
-```{r crmod, echo = T, eval = F}
+```{r crmod, echo = F, eval = F}
 function(t, states, par){
 
   with(as.list(c(states, par)), {
@@ -304,10 +300,10 @@ function(t, states, par){
 }
 ```
 
-Currently `rend` only has two main types of functional responses: one based on Holling's Type II and Type III (`Fij`),  and a second based on consumer interference (`Fbd`). 
+Currently `rend` only has two types of functional responses: one based on Holling's Type II and Type III (`Fij`),  and a second based on consumer interference (`Fbd`). 
 
 __Fij__
-```{r fij, echo = T, eval = F}
+```{r fij, echo = F, eval = F}
 function(B, A, B.0, xpar){
   sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))^(1+xpar)
   denom <- sum.bk + B.0^(1+xpar)
@@ -319,7 +315,7 @@ function(B, A, B.0, xpar){
 ```
 
 __Fbd__
-```{r fbd, echo = T, eval = F}
+```{r fbd, echo = F, eval = F}
 function(B, A, B.0, xpar){
   sum.bk <- rowSums(sapply(1:nrow(A), function(x){B[x] * A[x,]}))
   denom <- sum.bk + (1 + (xpar * B)) * B.0
@@ -339,7 +335,7 @@ The last part of `CRsimulator` will plot the output of the integration (when `pl
 
 In order to create a visualization of the dynamics of the food web through time, the rend package relies on the animation package. With the current version of rend, the user is able to take the output of the `CRsimulator` function and generate a video representation of the dynamics of the time series. Both biomass and interaction dynamics are visualized. Visualization is done by the `netHTML` function, which serves as a wrapper for the `animation` package's `saveHTML`. The function output is an HTML video of the food web at each time step. 
 
-```{r nethtml, echo = T, eval = F}
+```{r nethtml, echo = F, eval = F}
 function(mat, dyn, path1 = getwd()){
   require(animation)
 
@@ -372,7 +368,7 @@ function(mat, dyn, path1 = getwd()){
 
 In addition to the functions for simulation, the `rend` package also has several functions to analyze the output of the simulations. The three main analyses that can be run are (1) changes in food web indices through time, (2) change in motif structure through time, and (3) change in trophic position for each species through time. The function `WEBind` takes the output of `CRsimulator` and the initial adjacency matrix that was fed into the simulation as input. From this, new adjacency matrices are created for each time step and a eight indices are computed for each matrix. The output is the number of species, number of links, link density, connectance, diameter, average path length, clustering coefficient, and modularity (from the `rnetcarto` package, CITATION). These terms are defined in Table 3. Change in three-species motif structure through time can be found using the function `motifCounter3`. Just like with `WEBind` the inputs for the motif counting function are the output of the simulation and the initial adjacency matrix. The function then converts the adjacency matrices for each time step into `igraph` (CITATION) graph objects, which are then fed into the `igraph` function `triad.census` to get the frequency of three node configurations for each time step. The third analysis function, `trophicChange`, takes the same inputs: the output of the simulation and initial web. Then `trophicChange` outputs a species x time matrix where each row is the trophic position for each species at a given time step (and 0 represents extinction). Trophic position is found using the `TrophInd` function from the `NetIndices` R package (CITATION).     
 
-```{r table4, echo = F}
+```{r table4}
 inds <- c("N", "Ltot", "LD", "C", "D", "APL", "CC", "M", "nMod")
 defs <- c("The number of species wih positive biomass",
           "The total number of links among species with positive biomass",
@@ -400,9 +396,9 @@ m2sp <- matrix(c(0,0,1,0), nrow = 2, ncol = 2)
 m2sp
 ```
 
-All that is required is to feed this adjacency matrix into the `CRsimulator` function, and choose whether to alter any of the default parameter settings. The first six rows of the output are shown in Table 3. Column one is the time step, column two is the biomass species 1 (the basal species), and column three is the biomass of species 2 (the consumer). The resulting biomass dynamics are shown in Figure 3 below. The two species reach equilibrium rather quickly, within 100 time steps, following damped oscillations.     
+All that is required is to feed this adjacency matrix into the `CRsimulator` function, and choose whether to alter any of the default parameter settings. The first six rows of the output are shown in Table 3. Column one is the time step, column two is the biomass species 1 (the basal species), and column three is the biomass of species 2 (the consumer). The resulting biomass dynamics are shown in Figure 2 below. The two species reach equilibrium rather quickly, within 100 time steps, following damped oscillations.     
 
-```{r exSIM1, echo = T}
+```{r exSIM1, echo = F}
 my_sim <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2))
 ```
 
@@ -423,9 +419,9 @@ p2 <- ggplot(df1[df1$plot == "State",], aes(x = x, y = y)) + geom_path(size = 1,
 multiplot(p1, p2, layout = matrix(c(2, 1), nrow = 1, ncol = 2))
 ```
 
-The previous example in Figure 3 simply used the default settings for the `CRsimulator` function. An important setting for the user to select is the form of the functional response. Depending on whether the functional response is Lotka-Volterra or based on consumer intereference, you would expect to observe differences in the dynamics of the two species. The result of altering the functional response, and preserving the other default settings is shown in Figure 4. Looking at the difference between Lotka-Volterra (`Fij`) and consumer interference (`Fbd`) it appears as if the dynamics of the two species with Lotka-Volterra dynamics equilibrate faster. The pair of species with consumer interference are still exhibiting damped oscillations at time step 200, while the other pair are no longer oscillating.  
+The previous example in Figure 2 simply used the default settings for the `CRsimulator` function. An important setting for the user to select is the form of the functional response. Depending on whether the functional response is Lotka-Volterra or based on consumer intereference, you would expect to observe differences in the dynamics of the two species. The result of altering the functional response, and preserving the other default settings is shown in Figure 3. Looking at the difference between Lotka-Volterra (`Fij`) and consumer interference (`Fbd`) it appears as if the dynamics of the two species with Lotka-Volterra dynamics equilibrate faster. The pair of species with consumer interference are still exhibiting damped oscillations at time step 200, while the other pair are no longer oscillating.  
 
-```{r exSIM2, echo = T}
+```{r exSIM2, echo = F}
 my_simbd <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), FuncRes = Fbd)
 ```
 
@@ -437,7 +433,7 @@ FRdf <- data.frame(x = rep(1:200, 4), y = c(my_sim[,2], my_sim[,3], my_simbd[,2]
 ggplot(FRdf, aes(x = x, y = y, col = Species)) + geom_path(size = 1) + facet_wrap(~FR, scales = "free_x") + theme_bw() + xlab("Time") + ylab("Biomass")
 ```
 
-One would also expect that differences in the tuning parameter (_q_ in the Holling functional response or _c_ for consumer interference) will also alter the dynamics of the interacting species. By systematically altering the tuning parameter (`xpar` in `CRsimulator`) I can show how the dynamics associated with each functional response type change. The results of the two species `CRsimulator` with default settings except for `xpar` equal to 0, 0.2, 1, and 5 for each functional response type are shown in Figure 5.  
+One would also expect that differences in the tuning parameter (_q_ in the Holling functional response or _c_ for consumer interference) will also alter the dynamics of the interacting species. By systematically altering the tuning parameter (`xpar` in `CRsimulator`) I can show how the dynamics associated with each functional response type change. The results of the two species `CRsimulator` with default settings except for `xpar` equal to 0, 0.2, 1, and 5 for each functional response type are shown in Figure 4.  
 
 Williams and Martinez (CITATION) note that for the Holling functional response _q_ of 0 corresponds to a Type II functional response and _q_ of 1 corresponds to a Type III functional response. When _q_ is greater than one, the size of the prey "refugia" is larger as demonstrated by the larger lag in the functional response shown in Figure 1. For a consumer interference functional response (`Fbd`) the parameter _c_ reflects the strength of the interference among consumers.  
 
@@ -445,7 +441,7 @@ As the parameter _q_ increases the two species reach equilibrium faster and the 
 
 
 
-```{r exSIM4, echo = T}
+```{r exSIM4, echo = F}
 my_sim2 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 0)
 my_sim3 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 1)
 my_sim4 <- CRsimulator(matrix(c(0,0,1,0), nrow = 2, ncol = 2), xpar = 5)
@@ -475,7 +471,7 @@ ggplot(rdf, aes(x = X1, y = X2, col = factor(xpar))) + geom_path(size = 1, alpha
 
 ## Sample Run of Dynamics on Model Food Webs with Analysis  
 
-Most models of food webs generate a binary adjacency matrix (Figure 6) where a one indicates that species _i_ is consumed by species _j_. This allows for convenient pairing with the `rend` package. The `CRsimulator` function can take the output of these models as input and simulate the dynamics of the participating species. In this example I demonstrate how the package can be used to simulate the dynamics of a niche model food web. The niche model is a food web model that arranges _S_ species along some hypothetical niche axis. Each species consumes other species based on a randomly sampled feeding range with mean $c_i$ sampled from a uniform distribution from 0 to the species' niche value. The range is dependent on the user specified connectance _C_.
+Most models of food webs generate a binary adjacency matrix (Figure 5) where a one indicates that species _i_ is consumed by species _j_. This allows for convenient pairing with the `rend` package. The `CRsimulator` function can take the output of these models as input and simulate the dynamics of the participating species. In this example I demonstrate how the package can be used to simulate the dynamics of a niche model food web. The niche model is a food web model that arranges _S_ species along some hypothetical niche axis. Each species consumes other species based on a randomly sampled feeding range with mean $c_i$ sampled from a uniform distribution from 0 to the species' niche value. The range is dependent on the user specified connectance _C_.
 
 ```{r nichemodel}
 niche.model<-function(S,C){
@@ -550,7 +546,7 @@ ggplot(wi2, aes(x = Var1, y = value)) + geom_path() + facet_wrap(~Var2, scales =
 ```
 
 
-Figure 7 shows the output that would be given if `plot = TRUE` in the `CRsimulator` function, with an additional inset showing the last 25 time steps for clarity. It is clear that following a short period of high oscillatory behavior the system reaches equilibrium. Following the dynamics of predator prey interactions in this example, of the initial 20 species in the food web `r 20 - sum(simNM[200, -1] > 0)` have gone extinct (Figure 8, _N_). All measured food web indices exhibit changes through time during the simulation (Figure 8), which indicates that the extinctions caused by population dynamics in the model have an effect on the structure of the food web. The most obvious change in structure resulting from species extinction is a reduction in the number of species (_N_), and therefore the number of total links in the food web (_Ltot_). Concomitantly, the average number of links per species is reduced overall, however there is a bump around time steps 50, suggesting that the extinctions in that time were species with relatively few links. The initial sharp decline in _LD_ was likely caused by the loss of species with many links. Connectance (_C_) increases through time which is likely the result of the greater influence of the number of species on the measure compared to the effect of losing interactions. Decreases in food web diameter (_D_) and average path length (_APL_) are most likely to be caused by the loss of higher trophic level species (see also Figure 9). The clustering coefficient (_CC_) and modularity (_C_) show opposite patterns, with _CC_ increasing and _M_ decreasing. There is no change in the number of modules (_nMod_) and with the decrease in modularity the three modules get more strongly connected to one another. 
+Figure 6 shows the output that would be given if `plot = TRUE` in the `CRsimulator` function, with an additional inset showing the last 25 time steps for clarity. It is clear that following a short period of high oscillatory behavior the system reaches equilibrium. Following the dynamics of predator prey interactions in this example, of the initial 20 species in the food web `r 20 - sum(simNM[200, -1] > 0)` have gone extinct (Figure 7, _N_). All measured food web indices exhibit changes through time during the simulation (Figure 7), which indicates that the extinctions caused by population dynamics in the model have an effect on the structure of the food web. The most obvious change in structure resulting from species extinction is a reduction in the number of species (_N_), and therefore the number of total links in the food web (_Ltot_). Concomitantly, the average number of links per species is reduced overall, however there is a bump around time steps 50, suggesting that the extinctions in that time were species with relatively few links. The initial sharp decline in _LD_ was likely caused by the loss of species with many links. Connectance (_C_) increases through time which is likely the result of the greater influence of the number of species on the measure compared to the effect of losing interactions. Decreases in food web diameter (_D_) and average path length (_APL_) are most likely to be caused by the loss of higher trophic level species (see also Figure 8). The clustering coefficient (_CC_) and modularity (_C_) show opposite patterns, with _CC_ increasing and _M_ decreasing. There is no change in the number of modules (_nMod_) and with the decrease in modularity the three modules get more strongly connected to one another. 
 
 ```{r fig10tc, fig.cap = "Change in trophic position over time"}
 tc1 <- trophicChange(simNM, n)
@@ -576,19 +572,17 @@ The current functions for assessing the output of the simulation are descriptive
 
 Currently this package only supports a narrow range of model structures. Users can simulate dynamics with a Holling Type II, II.2 (CITATION) or III function response, or they can use the Beddington-DeAngelis functional response with consumer interferences. This is only a small subset of the proposed functional response types and ignores both simpler and more complex forms. 
 
-Drossell et al. (CITATION) demonstrated that ratio-dependent functional responses led to more realistic food web structures. Therefore, in order to more properly assess how population dynamics impacts the structure of food webs using this package, I should incorporate this type of functional response. The problem here is that there is not currently an implementation of a ratio-dependent functional response for bioenergetic models. There has, however, been work to that effect in population-abundance based models. 
+Drossel et al. (CITATION) demonstrated that ratio-dependent functional responses led to more realistic food web structures. Therefore, in order to more properly assess how population dynamics impacts the structure of food webs using this package, I should incorporate this type of functional response. The problem here is that there is not currently an implementation of a ratio-dependent functional response for bioenergetic models. There has, however, been work to that effect in population-abundance based models. 
 
 Additional options for simulation of trophic dynamics would be to incorporate abundance-based models in addition to the current bioenergetic model. This would allow for an expanded selection of functional forms and more flexibility for the user. 
 
 ## Adding models for alternative interaction types  
 
-The package `rend` was initially imagined as a package for ecological network dynamics, which extends beyond food webs and predator-prey interactions. The umbrella of ecological networks includes other interaction types, and mutualistic or competitive networks are becoming increasingly popular areas of research. 
-
-In addition to providing support for simulations of alternative interaction type networks, I would like to allow for dynamic simulations of whole communities. Natural communities are never made up of species interacting only one way, and there should be a way to integrate models of different interactions into a single simulation.   
+The package `rend` was initially imagined as a package for ecological network dynamics, which extends beyond food webs and predator-prey interactions. The umbrella of ecological networks includes other interaction types, and mutualistic or competitive networks are becoming increasingly popular areas of research. In addition to providing support for simulations of alternative interaction type networks, I would like to allow for dynamic simulations of whole communities. Natural communities are never made up of species interacting only one way, and there should be a way to integrate models of different interactions into a single simulation.   
 
 ## Incorporate Stochasticity  
 
 Currently the models I have implemented in the `rend` package are deterministic. Multiple runs with the same food web adjacency matrix will result in the same equilibrium community, and the only source of randomness in the model is the initial biomasses of species, which are selected from a random uniform distribution. Any differences in initial biomass, however, are rarely large enough to alter the final community structure. The reason that these models must be deterministic is because the `deSolve` package, which allows for the numerical integration, does not support stochastic differential equations. The alternative is to utilize the `sde` package (CITATION), which is a package for the numerical integration of stochastic differential equations.  
 
-The benefit of incorporating stochasticity in the simulation is that it would allow for risk-based assessment of communitiy configurations. Analysis of the dynamics resulting from stochastic models could proceed probabilistically rather than as binary outcomes (either a species goes extinct or it does not). Furthermore, as species in nature typically display stochastic dynamics, any predicitons made from stochastic models would likely hold up better. 
+Incorporating stochasticity in the simulation would allow for risk-based assessment of community configurations. Analysis of the dynamics resulting from stochastic models could proceed probabilistically rather than as binary outcomes (either a species goes extinct or it does not). Furthermore, as species in nature typically display stochastic dynamics, any predictons made from stochastic models would likely hold up better. 
 
